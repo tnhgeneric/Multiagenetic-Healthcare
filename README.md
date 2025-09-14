@@ -148,20 +148,20 @@ This Mermaid diagram now includes the orchestration agent and sub-agents with th
 
 ```mermaid
 graph TD
-  subgraph Mobile & Frontend
+  subgraph Mobile_Frontend
     A[User (Mobile App)]
     B[React Native + NX]
     A-->|User Input/Display|B
   end
 
-  subgraph API Gateway & Backend
+  subgraph API_Gateway_Backend
     C[FastAPI (Python) API Gateway]
     D[Spring Boot (Java) Services]
     B-->|REST API|C
-    B-->|(Optional)|D
+    B-->|Optional|D
   end
 
-  subgraph LLM & AI
+  subgraph LLM_AI
     G[LangChain]
     H[Google Vertex AI]
     T1[Tokenization]
@@ -178,7 +178,7 @@ graph TD
     G-->|LLM API|H
   end
 
-  subgraph Orchestration & Agents
+  subgraph Orchestration_Agents
     E[Orchestration Agent (FastAPI + LangChain)]
     E1[Input Handler]
     E2[Task Planner]
@@ -187,14 +187,14 @@ graph TD
     E5[Result Aggregator]
     E6[Error Handler]
     E7[Feedback Loop]
-    F1[Patient Journey Agent (Python)\n(Tracks Appointments, Treatments, Follow-ups)]
+    F1[Patient Journey Agent (Python)\nTracks Appointments, Treatments, Follow-ups]
     F1A[Task Handler]
     F1B[Domain Logic]
     F1C[API/Data Connector]
     F1D[State/Session Manager]
     F1E[Result Formatter]
     F1F[Error Handler]
-    F2[Disease Prediction Agent (Python)\n(Predicts Diseases from Symptoms)]
+    F2[Disease Prediction Agent (Python)\nPredicts Diseases from Symptoms]
     F2A[Task Handler]
     F2B[Domain Logic]
     F2C[API/Data Connector]
@@ -223,7 +223,7 @@ graph TD
     E7-->|Feedback|E
   end
 
-  subgraph Data & Knowledge
+  subgraph Data_Knowledge
     I[Neo4j (Ontology/Graph DB)]
     J[Firebase Firestore (NoSQL)]
     K[Firebase Realtime DB]
@@ -235,16 +235,16 @@ graph TD
     E3-->|Notifications|K
   end
 
-  subgraph Messaging & Security
+  subgraph Messaging_Security
     L[REST APIs / Message Queues]
     M[OAuth2 / JWT Auth]
     C-->|Secure API|M
-    E3-->|Async Tasks (optional)|L
-    F1A-->|Async Tasks (optional)|L
-    F2A-->|Async Tasks (optional)|L
+    E3-->|Async Tasks Optional|L
+    F1A-->|Async Tasks Optional|L
+    F2A-->|Async Tasks Optional|L
   end
 
-  subgraph DevOps & Monitoring
+  subgraph DevOps_Monitoring
     N[GitHub Actions / CI-CD]
     O[Firebase Hosting / Cloud Run]
     P[Logging & Monitoring (Stackdriver/Sentry)]
