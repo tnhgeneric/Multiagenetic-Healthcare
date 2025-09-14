@@ -149,63 +149,63 @@ This Mermaid diagram now includes the orchestration agent and sub-agents with th
 ```mermaid
 graph TD
   subgraph Mobile_Frontend
-    A[User (Mobile App)]
-    B[React Native + NX]
-    A-->|User Input/Display|B
+    A[User_Mobile_App]
+    B[React_Native_NX]
+    A-->|User_Input_Display|B
   end
 
   subgraph API_Gateway_Backend
-    C[FastAPI (Python) API Gateway]
-    D[Spring Boot (Java) Services]
-    B-->|REST API|C
+    C[FastAPI_Python_API_Gateway]
+    D[Spring_Boot_Java_Services]
+    B-->|REST_API|C
     B-->|Optional|D
   end
 
   subgraph LLM_AI
     G[LangChain]
-    H[Google Vertex AI]
+    H[Google_Vertex_AI]
     T1[Tokenization]
-    T2[Embedding (Vectorization)]
-    T3[Attention/Transformation]
-    T4[Similarity Mapping]
-    T5[Output Generation (MCP/ACL)]
-    C-->|Enriched Prompt|T1
+    T2[Embedding_Vectorization]
+    T3[Attention_Transformation]
+    T4[Similarity_Mapping]
+    T5[Output_Generation_MCP_ACL]
+    C-->|Enriched_Prompt|T1
     T1-->|Tokens|T2
     T2-->|Vectors|T3
-    T3-->|Contextualized Vectors|T4
-    T4-->|Relevant Info|T5
-    T5-->|LLM Output|G
-    G-->|LLM API|H
+    T3-->|Contextualized_Vectors|T4
+    T4-->|Relevant_Info|T5
+    T5-->|LLM_Output|G
+    G-->|LLM_API|H
   end
 
   subgraph Orchestration_Agents
-    E[Orchestration Agent (FastAPI + LangChain)]
-    E1[Input Handler]
-    E2[Task Planner]
-    E3[Agent Dispatcher]
-    E4[State Manager]
-    E5[Result Aggregator]
-    E6[Error Handler]
-    E7[Feedback Loop]
-    F1[Patient Journey Agent (Python)\nTracks Appointments, Treatments, Follow-ups]
-    F1A[Task Handler]
-    F1B[Domain Logic]
-    F1C[API/Data Connector]
-    F1D[State/Session Manager]
-    F1E[Result Formatter]
-    F1F[Error Handler]
-    F2[Disease Prediction Agent (Python)\nPredicts Diseases from Symptoms]
-    F2A[Task Handler]
-    F2B[Domain Logic]
-    F2C[API/Data Connector]
-    F2D[State/Session Manager]
-    F2E[Result Formatter]
-    F2F[Error Handler]
-    T5-->|MCP/ACL Output|E1
-    E1-->|Validated Plan|E2
-    E2-->|Sequenced Tasks|E3
-    E3-->|Dispatch: Journey Tracking|F1A
-    E3-->|Dispatch: Disease Prediction|F2A
+    E[Orchestration_Agent_FastAPI_LangChain]
+    E1[Input_Handler]
+    E2[Task_Planner]
+    E3[Agent_Dispatcher]
+    E4[State_Manager]
+    E5[Result_Aggregator]
+    E6[Error_Handler]
+    E7[Feedback_Loop]
+    F1[Patient_Journey_Agent_Python_Tracks_Appointments_Treatments_Followups]
+    F1A[Task_Handler]
+    F1B[Domain_Logic]
+    F1C[API_Data_Connector]
+    F1D[State_Session_Manager]
+    F1E[Result_Formatter]
+    F1F[Error_Handler]
+    F2[Disease_Prediction_Agent_Python_Predicts_Diseases_from_Symptoms]
+    F2A[Task_Handler]
+    F2B[Domain_Logic]
+    F2C[API_Data_Connector]
+    F2D[State_Session_Manager]
+    F2E[Result_Formatter]
+    F2F[Error_Handler]
+    T5-->|MCP_ACL_Output|E1
+    E1-->|Validated_Plan|E2
+    E2-->|Sequenced_Tasks|E3
+    E3-->|Dispatch_Journey_Tracking|F1A
+    E3-->|Dispatch_Disease_Prediction|F2A
     F1A-->|Process|F1B
     F1B-->|Data|F1C
     F1C-->|Session|F1D
@@ -218,40 +218,40 @@ graph TD
     F2D-->|Format|F2E
     F2E-->|Result|E5
     F2F-->|Error|E6
-    E5-->|Aggregated Results|E7
+    E5-->|Aggregated_Results|E7
     E6-->|Errors|E7
     E7-->|Feedback|E
   end
 
   subgraph Data_Knowledge
-    I[Neo4j (Ontology/Graph DB)]
-    J[Firebase Firestore (NoSQL)]
-    K[Firebase Realtime DB]
-    F1C-->|Patient Data|J
+    I[Neo4j_Ontology_Graph_DB]
+    J[Firebase_Firestore_NoSQL]
+    K[Firebase_Realtime_DB]
+    F1C-->|Patient_Data|J
     F1C-->|Ontology|I
-    F2C-->|Patient Data|J
+    F2C-->|Patient_Data|J
     F2C-->|Ontology|I
-    E4-->|Session/State|J
+    E4-->|Session_State|J
     E3-->|Notifications|K
   end
 
   subgraph Messaging_Security
-    L[REST APIs / Message Queues]
-    M[OAuth2 / JWT Auth]
-    C-->|Secure API|M
-    E3-->|Async Tasks Optional|L
-    F1A-->|Async Tasks Optional|L
-    F2A-->|Async Tasks Optional|L
+    L[REST_APIs_Message_Queues]
+    M[OAuth2_JWT_Auth]
+    C-->|Secure_API|M
+    E3-->|Async_Tasks_Optional|L
+    F1A-->|Async_Tasks_Optional|L
+    F2A-->|Async_Tasks_Optional|L
   end
 
   subgraph DevOps_Monitoring
-    N[GitHub Actions / CI-CD]
-    O[Firebase Hosting / Cloud Run]
-    P[Logging & Monitoring (Stackdriver/Sentry)]
-    C-->|Deploy/Monitor|O
-    E-->|Deploy/Monitor|O
-    F1-->|Deploy/Monitor|O
-    F2-->|Deploy/Monitor|O
+    N[GitHub_Actions_CI_CD]
+    O[Firebase_Hosting_Cloud_Run]
+    P[Logging_Monitoring_Stackdriver_Sentry]
+    C-->|Deploy_Monitor|O
+    E-->|Deploy_Monitor|O
+    F1-->|Deploy_Monitor|O
+    F2-->|Deploy_Monitor|O
     O-->|Logs|P
   end
 ```
