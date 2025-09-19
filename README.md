@@ -69,84 +69,10 @@ Below is a placeholder for the system architecture diagram. This diagram should 
 
 This ASCII diagram provides a high-level overview of the system architecture, showing the main components and their interactions.
 
-## Mermaid System Architecture Diagram
-
-```mermaid
-graph TD
-  A[Mobile Frontend (React Native + NX)] -- REST/API --> B(Backend API (FastAPI, Spring Boot))
-  B -- Coordinates --> C[Orchestration Agent]
-  C -- Manages --> D1[Patient Journey Agent]
-  C -- Manages --> D2[Disease Prediction Agent]
-  C -- Integrates --> G[LangChain]
-  C -- AI Services --> H[Google Vertex AI (via Firebase)]
-  C -- Graph Data --> E[Neo4j (Ontology/Graph)]
-  B -- Real-time/NoSQL --> F[Firebase Firestore/Realtime DB]
-
-  %% Orchestration Agent Components
-  C -- Input --> C1[Input Handler]
-  C -- Plans --> C2[Task Planner]
-  C -- Dispatches --> C3[Agent Dispatcher]
-  C -- Tracks --> C4[State Manager]
-  C -- Aggregates --> C5[Result Aggregator]
-  C -- Handles Errors --> C6[Error Handler]
-  C -- Feedback --> C7[Feedback Loop]
-
-  %% Patient Journey Agent Components
-  D1 -- Tracks --> D1A[Appointments]
-  D1 -- Tracks --> D1B[Treatments]
-  D1 -- Tracks --> D1C[Follow-ups]
-
-  %% Disease Prediction Agent Components
-  D2 -- Uses --> D2A[Symptom Input]
-  D2 -- Uses --> D2B[Rule-based Logic]
-  D2 -- Uses --> D2C[ML Models]
-
-  %% Sub-Agent Key Components
-  D1 -- Handles --> D1D[Task Handler]
-  D1 -- Logic --> D1E[Domain Logic]
-  D1 -- Connects --> D1F[API/Data Connector]
-  D1 -- Manages --> D1G[State/Session Manager]
-  D1 -- Formats --> D1H[Result Formatter]
-  D1 -- Handles Errors --> D1I[Error Handler]
-
-  D2 -- Handles --> D2D[Task Handler]
-  D2 -- Logic --> D2E[Domain Logic]
-  D2 -- Connects --> D2F[API/Data Connector]
-  D2 -- Manages --> D2G[State/Session Manager]
-  D2 -- Formats --> D2H[Result Formatter]
-  D2 -- Handles Errors --> D2I[Error Handler]
-
-  %% Tools & Resources Used by Sub-Agents
-  D1 -- Uses --> T1[External APIs]
-  D1 -- Uses --> T2[Internal Services]
-  D1 -- Uses --> T3[Databases]
-  D1 -- Uses --> T4[Knowledge Bases]
-  D1 -- Uses --> T5[Tools/Plugins]
-  D1 -- Uses --> T6[Messaging/Queue Systems]
-  D1 -- Uses --> T7[Security/Compliance Modules]
-  D1 -- Uses --> T8[MCP Plane]
-
-  D2 -- Uses --> T1
-  D2 -- Uses --> T2
-  D2 -- Uses --> T3
-  D2 -- Uses --> T4
-  D2 -- Uses --> T5
-  D2 -- Uses --> T6
-  D2 -- Uses --> T7
-  D2 -- Uses --> T8
-
-  %% LLM Prompt Enrichment
-  G -- Prompt --> P1[Enriched Prompt (MCP/ACL)]
-  P1 -- To --> C
-```
-
-This Mermaid diagram now includes the orchestration agent and sub-agents with their key internal components, providing a detailed and modern visual representation of the system architecture.
-
----
 
 ## Solution Architecture Diagram (Mermaid)
 
-![System Architecture](Multiagenetic-Healthcareassets/Solution - Architecture - Diagram.png)
+![System Architecture](Multiagenetic-Healthcareassets/Solution%20Architecture%20Diagram.png)
 
 **Legend:**
 - **Blue nodes**: Technologies/Frameworks
