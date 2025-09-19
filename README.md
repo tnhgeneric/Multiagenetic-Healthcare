@@ -72,7 +72,7 @@ This ASCII diagram provides a high-level overview of the system architecture, sh
 
 ## Solution Architecture Diagram (Mermaid)
 
-![System Architecture](Basic%20Architecture%20diagram.png)
+![System Architecture](architecture.png)
 
 **Legend:**
 - **Blue nodes**: Technologies/Frameworks
