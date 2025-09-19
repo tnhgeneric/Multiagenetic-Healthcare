@@ -69,9 +69,192 @@ Below is a placeholder for the system architecture diagram. This diagram should 
 
 This ASCII diagram provides a high-level overview of the system architecture, showing the main components and their interactions.
 
-## Solution Architecture Diagram
+## Mermaid System Architecture Diagram
 
-![Solution Architecture Diagram](Solution%20-%20Architecture%20-%20Diagram.png)
+```mermaid
+graph TD
+  A[Mobile Frontend (React Native + NX)] -- REST/API --> B(Backend API (FastAPI, Spring Boot))
+  B -- Coordinates --> C[Orchestration Agent]
+  C -- Manages --> D1[Patient Journey Agent]
+  C -- Manages --> D2[Disease Prediction Agent]
+  C -- Integrates --> G[LangChain]
+  C -- AI Services --> H[Google Vertex AI (via Firebase)]
+  C -- Graph Data --> E[Neo4j (Ontology/Graph)]
+  B -- Real-time/NoSQL --> F[Firebase Firestore/Realtime DB]
+
+  %% Orchestration Agent Components
+  C -- Input --> C1[Input Handler]
+  C -- Plans --> C2[Task Planner]
+  C -- Dispatches --> C3[Agent Dispatcher]
+  C -- Tracks --> C4[State Manager]
+  C -- Aggregates --> C5[Result Aggregator]
+  C -- Handles Errors --> C6[Error Handler]
+  C -- Feedback --> C7[Feedback Loop]
+
+  %% Patient Journey Agent Components
+  D1 -- Tracks --> D1A[Appointments]
+  D1 -- Tracks --> D1B[Treatments]
+  D1 -- Tracks --> D1C[Follow-ups]
+
+  %% Disease Prediction Agent Components
+  D2 -- Uses --> D2A[Symptom Input]
+  D2 -- Uses --> D2B[Rule-based Logic]
+  D2 -- Uses --> D2C[ML Models]
+
+  %% Sub-Agent Key Components
+  D1 -- Handles --> D1D[Task Handler]
+  D1 -- Logic --> D1E[Domain Logic]
+  D1 -- Connects --> D1F[API/Data Connector]
+  D1 -- Manages --> D1G[State/Session Manager]
+  D1 -- Formats --> D1H[Result Formatter]
+  D1 -- Handles Errors --> D1I[Error Handler]
+
+  D2 -- Handles --> D2D[Task Handler]
+  D2 -- Logic --> D2E[Domain Logic]
+  D2 -- Connects --> D2F[API/Data Connector]
+  D2 -- Manages --> D2G[State/Session Manager]
+  D2 -- Formats --> D2H[Result Formatter]
+  D2 -- Handles Errors --> D2I[Error Handler]
+
+  %% Tools & Resources Used by Sub-Agents
+  D1 -- Uses --> T1[External APIs]
+  D1 -- Uses --> T2[Internal Services]
+  D1 -- Uses --> T3[Databases]
+  D1 -- Uses --> T4[Knowledge Bases]
+  D1 -- Uses --> T5[Tools/Plugins]
+  D1 -- Uses --> T6[Messaging/Queue Systems]
+  D1 -- Uses --> T7[Security/Compliance Modules]
+  D1 -- Uses --> T8[MCP Plane]
+
+  D2 -- Uses --> T1
+  D2 -- Uses --> T2
+  D2 -- Uses --> T3
+  D2 -- Uses --> T4
+  D2 -- Uses --> T5
+  D2 -- Uses --> T6
+  D2 -- Uses --> T7
+  D2 -- Uses --> T8
+
+  %% LLM Prompt Enrichment
+  G -- Prompt --> P1[Enriched Prompt (MCP/ACL)]
+  P1 -- To --> C
+```
+
+This Mermaid diagram now includes the orchestration agent and sub-agents with their key internal components, providing a detailed and modern visual representation of the system architecture.
+
+---
+
+## Solution Architecture Diagram (Mermaid)
+
+```mermaid
+graph TD
+  subgraph Mobile & Frontend
+    A[User (Mobile App)]
+    B[React Native + NX]
+    A-->|User Input/Display|B
+  end
+
+  subgraph API Gateway & Backend
+    C[FastAPI (Python) API Gateway]
+    D[Spring Boot (Java) Services]
+    B-->|REST API|C
+    B-->|(Optional)|D
+  end
+
+  subgraph LLM & AI
+    G[LangChain]
+    H[Google Vertex AI]
+    T1[Tokenization]
+    T2[Embedding (Vectorization)]
+    T3[Attention/Transformation]
+    T4[Similarity Mapping]
+    T5[Output Generation (MCP/ACL)]
+    C-->|Enriched Prompt|T1
+    T1-->|Tokens|T2
+    T2-->|Vectors|T3
+    T3-->|Contextualized Vectors|T4
+    T4-->|Relevant Info|T5
+    T5-->|LLM Output|G
+    G-->|LLM API|H
+  end
+
+  subgraph Orchestration & Agents
+    E[Orchestration Agent (FastAPI + LangChain)]
+    E1[Input Handler]
+    E2[Task Planner]
+    E3[Agent Dispatcher]
+    E4[State Manager]
+    E5[Result Aggregator]
+    E6[Error Handler]
+    E7[Feedback Loop]
+    F1[Patient Journey Agent (Python)\n(Tracks Appointments, Treatments, Follow-ups)]
+    F1A[Task Handler]
+    F1B[Domain Logic]
+    F1C[API/Data Connector]
+    F1D[State/Session Manager]
+    F1E[Result Formatter]
+    F1F[Error Handler]
+    F2[Disease Prediction Agent (Python)\n(Predicts Diseases from Symptoms)]
+    F2A[Task Handler]
+    F2B[Domain Logic]
+    F2C[API/Data Connector]
+    F2D[State/Session Manager]
+    F2E[Result Formatter]
+    F2F[Error Handler]
+    T5-->|MCP/ACL Output|E1
+    E1-->|Validated Plan|E2
+    E2-->|Sequenced Tasks|E3
+    E3-->|Dispatch: Journey Tracking|F1A
+    E3-->|Dispatch: Disease Prediction|F2A
+    F1A-->|Process|F1B
+    F1B-->|Data|F1C
+    F1C-->|Session|F1D
+    F1D-->|Format|F1E
+    F1E-->|Result|E5
+    F1F-->|Error|E6
+    F2A-->|Process|F2B
+    F2B-->|Data|F2C
+    F2C-->|Session|F2D
+    F2D-->|Format|F2E
+    F2E-->|Result|E5
+    F2F-->|Error|E6
+    E5-->|Aggregated Results|E7
+    E6-->|Errors|E7
+    E7-->|Feedback|E
+  end
+
+  subgraph Data & Knowledge
+    I[Neo4j (Ontology/Graph DB)]
+    J[Firebase Firestore (NoSQL)]
+    K[Firebase Realtime DB]
+    F1C-->|Patient Data|J
+    F1C-->|Ontology|I
+    F2C-->|Patient Data|J
+    F2C-->|Ontology|I
+    E4-->|Session/State|J
+    E3-->|Notifications|K
+  end
+
+  subgraph Messaging & Security
+    L[REST APIs / Message Queues]
+    M[OAuth2 / JWT Auth]
+    C-->|Secure API|M
+    E3-->|Async Tasks (optional)|L
+    F1A-->|Async Tasks (optional)|L
+    F2A-->|Async Tasks (optional)|L
+  end
+
+  subgraph DevOps & Monitoring
+    N[GitHub Actions / CI-CD]
+    O[Firebase Hosting / Cloud Run]
+    P[Logging & Monitoring (Stackdriver/Sentry)]
+    C-->|Deploy/Monitor|O
+    E-->|Deploy/Monitor|O
+    F1-->|Deploy/Monitor|O
+    F2-->|Deploy/Monitor|O
+    O-->|Logs|P
+  end
+```
 
 **Legend:**
 - **Blue nodes**: Technologies/Frameworks
