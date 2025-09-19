@@ -1,3 +1,46 @@
+# NX Monorepo Setup Instructions
+This project uses an NX monorepo to manage both the Expo Go React Native frontend and the Python backend.
+
+## Initial Setup (with Directory Structure Note)
+
+1. **Create the NX workspace:**
+	```sh
+	npx create-nx-workspace@latest multiagenetic-healthcare
+    Please note this will create the folder 'multiagenetic-healthcare' inside the folder you have chosen.
+	```
+	- Choose `None` for the preset (TypeScript/JavaScript monorepo).
+	- Choose TypeScript as the default language.
+
+2. **Add Expo Go React Native app:**
+	```sh
+	npm install --save-dev @nx/expo
+	npx nx g @nx/expo:app mobile
+	```
+	- **Note:** In recent NX versions, the generated app (e.g., `mobile`) is placed directly in the root of your workspace, not under an `apps/` folder. This is expected and follows the new flat structure convention. If you want to use the classic `apps/` folder, you can manually move the generated app into `apps/mobile` and update your NX configuration accordingly. However, the flat structure is fully supported and recommended by NX.
+
+3. **Add backend folder for Python:**
+	```sh
+	mkdir python_backend
+	```
+	- Place your Python backend code in the `python_backend` folder at the root. This allows you to add other backend folders later (e.g., `spring_backend` for a Java/Spring backend) and keeps each backend isolated. (If you prefer, you can use `apps/python_backend` for a classic structure, but this is optional.)
+
+4. **(Optional) Add a libs folder for shared code:**
+	```sh
+	mkdir packages
+	```
+	- NX now often uses `packages/` for shared libraries, but `libs/` is also fine.
+
+5. **Commit your changes:**
+	```sh
+	git add .
+	git commit -m "Initialize NX monorepo with Expo Go frontend and backend folder"
+	```
+
+**Directory Issue Note:**
+
+If you expected to see an `apps/` folder, but only see `mobile/` in the root, this is normal for the latest NX versions. The workspace uses a flat structure by default. Your `mobile` app and any other apps or packages will appear at the root level unless you manually organize them into folders like `apps/` or `packages/`.
+
+You can now develop your Expo Go app in `mobile/` and your Python backend in `python_backend/` (or `apps/python_backend` if you created it that way). If you add a Spring backend, you might use a folder like `spring_backend/`.
 # MultiageneticHealthcare
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
