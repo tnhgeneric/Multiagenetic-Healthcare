@@ -2,13 +2,18 @@
 from fastapi import FastAPI
 
 from orchestration.input_handler import InputHandler
+
 from orchestration.task_planner import TaskPlanner
+from orchestration.agent_dispatcher import AgentDispatcher
 
 app = FastAPI(title="Orchestration Agent API")
 
 
 input_handler = InputHandler()
+
 task_planner = TaskPlanner()
+agent_dispatcher = AgentDispatcher()
+
 
 
 @app.post("/orchestrate")
@@ -24,5 +29,8 @@ def orchestrate(mcp_acl_json: dict):
     # Step 3: Sequence and enrich tasks
     sequenced_tasks = task_planner.sequence_tasks(plan)
 
-    # Step 4: (Placeholder) Return sequenced tasks
-    return {"sequenced_tasks": sequenced_tasks}
+    # Step 4: Dispatch tasks to sub-agents
+    dispatch_results = agent_dispatcher.dispatch(sequenced_tasks)
+
+    # Step 5: Return dispatch results
+    return {"dispatch_results": dispatch_results}
