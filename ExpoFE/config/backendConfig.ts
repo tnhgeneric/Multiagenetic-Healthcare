@@ -17,7 +17,25 @@ function envBackendUrl(): string | undefined {
   return undefined;
 }
 
-export const BACKEND_BASE_URL: string = envBackendUrl() || 'http://localhost:8000';
+function debuggerHostBackend(): string | undefined {
+  try {
+    // When running via Expo, Constants.manifest.debuggerHost often contains "<ip>:<port>".
+    const manifest: any = Constants && (Constants.manifest || Constants.expoConfig || {});
+    const dbg = manifest && (manifest.debuggerHost || (manifest.extra && manifest.extra.debuggerHost));
+    if (dbg && typeof dbg === 'string') {
+      const host = dbg.split(':')[0];
+      if (host && host !== 'localhost' && host !== '127.0.0.1') {
+        return `http://${host}:8000`;
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+  return undefined;
+}
+
+// Always use the configured backend URL from app.json or env, fall back to LAN IP
+export const BACKEND_BASE_URL: string = envBackendUrl() || 'http://192.168.1.25:8000';
 
 // Developer note:
 // - When running the backend locally and testing on a physical device, set
