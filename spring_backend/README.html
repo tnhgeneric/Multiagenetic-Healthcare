@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Agentic Backend Documentation</title>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true });
+  </script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; background: #fafbfc; color: #222; }
+    pre, code { background: #f4f4f4; padding: 0.5em; border-radius: 4px; }
+    .mermaid { background: #fff; border: 1px solid #eee; border-radius: 6px; margin: 1em 0; padding: 1em; }
+    h1, h2, h3, h4 { color: #2c3e50; }
+    hr { border: none; border-top: 1px solid #eee; margin: 2em 0; }
+  </style>
+</head>
+<body>
+  <h1>Agentic Backend (Spring Boot)</h1>
+  <p>This backend powers an agentic AI for healthcare, focused on patient journey tracking, advanced graph reasoning, and microservices architecture using Spring Boot and Neo4j Aura. The project follows a five-step methodology, with industry-standard enhancements and best practices.</p>
+  <hr>
+  <h2>System Architecture Diagram (Prompt Flow)</h2>
+  <div class="mermaid">graph TD
+    A["React Frontend (Mobile/Web App)"] -- "1" --> B["Python FastAPI Microservice"]
+    B -- "2" --> F["LangChain (Framework)"]
+    F -- "3" --> C["LLM Provider (Google Vertex AI, OpenAI, etc.)"]
+    C -- "4" --> D["Neo4j Aura (Knowledge Graph)"]
+    D -- "5" --> C
+    C -- "6" --> F
+    F -- "7" --> B
+    B -- "8" --> A
+    E["Spring Boot Backend (Java, Neo4j CRUD)"]
+    A -- "A" --> E
+    E -- "B" --> D
+    D -- "C" --> E
+    E -- "D" --> A
+</div>
+  <h3>Legend:</h3>
+  <ul>
+    <li><b>React Frontend:</b> User interface for patients, doctors, admins (mobile/web).</li>
+    <li><b>Python FastAPI Microservice:</b> API gateway and orchestration for LLM/agentic features.</li>
+    <li><b>LangChain (Framework):</b> Orchestrates prompt flows, agent logic, tool-calling, and connects to LLM providers.</li>
+    <li><b>LLM Provider:</b> Google Vertex AI (PaLM, Gemini) or OpenAI for LLM-powered features.</li>
+    <li><b>Neo4j Aura:</b> Cloud graph database for healthcare ontology and patient journeys.</li>
+    <li><b>Spring Boot Backend:</b> Handles business logic, CRUD, security, and Neo4j graph operations (not in LLM prompt loop).</li>
+  </ul>
+  <ol>
+    <li><b>1:</b> User prompt sent from frontend to FastAPI microservice.</li>
+    <li><b>2:</b> FastAPI passes prompt to LangChain framework.</li>
+    <li><b>3:</b> LangChain sends prompt to LLM Provider (Vertex/OpenAI).</li>
+    <li><b>4:</b> LLM Provider queries Neo4j Aura if needed.</li>
+    <li><b>5:</b> Neo4j Aura returns result to LLM Provider.</li>
+    <li><b>6:</b> LLM Provider sends processed result to LangChain.</li>
+    <li><b>7:</b> LangChain returns result to FastAPI.</li>
+    <li><b>8:</b> FastAPI returns final answer to frontend.</li>
+  </ol>
+  <ol>
+    <li><b>A:</b> Frontend requests backend to update the DB.</li>
+    <li><b>B:</b> Backend talks to DB.</li>
+    <li><b>C:</b> DB responds to backend.</li>
+    <li><b>D:</b> Backend sends message to frontend.</li>
+  </ol>
+  <p><b>Notes:</b><br>
+    - The main prompt flow is indicated by numbered arrows: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8.<br>
+    - The CRUD/business logic flow is indicated by letters: A → B → C → D.<br>
+    - LangChain is now explicitly shown as the orchestration layer between FastAPI and the LLM provider.<br>
+    - Arrows show both request and response directions for all major API flows.
+  </p>
+  <hr>
+  <h2>LLM Microservice: Neo4j Integration & Agentic Reasoning</h2>
+  <h3>Overview</h3>
+  <p>The Python FastAPI microservice integrates Google Vertex AI (via LangChain) with Neo4j Aura to enable agentic, context-aware responses. When a user prompt mentions a patient (e.g., "John Doe"), the service:</p>
+  <ol>
+    <li>Extracts the patient name from the prompt.</li>
+    <li>Queries Neo4j for the patient's journey (admissions, diagnoses, treatments, etc.).</li>
+    <li>Formats the journey into a human-readable summary.</li>
+    <li>Passes this context, along with the original prompt, to the LLM for a personalized answer.</li>
+  </ol>
+  <h3>main.py Key Logic</h3>
+  <ul>
+    <li><b>Neo4j Connection:</b> Uses environment variables for secure credentials.</li>
+    <li><b>Patient Name Extraction:</b> Uses regex to find names in prompts.</li>
+    <li><b>Journey Query & Formatting:</b> Retrieves and summarizes all related events for the patient.</li>
+    <li><b>/ask Endpoint:</b> Combines journey context and user question for the LLM.</li>
+  </ul>
+  <h3>Example Usage</h3>
+  <pre><code>curl -X POST "http://127.0.0.1:8000/ask" ^
+     -H "Content-Type: application/json" ^
+     -d '{"prompt": "What is the status of John Doe?"}'
+  </code></pre>
+  <p><b>Sample Response:</b></p>
+  <pre><code>{
+  "response": "John Doe is currently admitted to City General Hospital at Colombo.",
+  "context": "Patient John Doe journey: Admitted to City General Hospital at Colombo"
+}
+  </code></pre>
+  <h3>How It Works</h3>
+  <ul>
+    <li>The agentic AI doesn't just answer from memory—it actively queries the knowledge graph for up-to-date, personalized information, then reasons over it to generate a trustworthy response.</li>
+  </ul>
+  <h3>Environment Variables</h3>
+  <pre><code>set NEO4J_URI=neo4j+s://&lt;your-neo4j-instance&gt;.databases.neo4j.io
+set NEO4J_USER=neo4j
+set NEO4J_PASSWORD=your-strong-password
+  </code></pre>
+  <hr>
+  <p><i>For the full documentation, please refer to the original README.md file.</i></p>
+</body>
+</html>
