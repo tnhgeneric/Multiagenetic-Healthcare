@@ -1,6 +1,20 @@
-# Multi-Agentic Healthcare System Integration Guide
+# Multi-Agentic Healthcare System Integrati## 2. Frontend Configuration
 
-This guide details the configuration and setup steps needed to run both the frontend (Expo) and backend (Python FastAPI) components of the Multi-Agentic Healthcare System.
+Location: `ExpoFE/` (Main Frontend Application)
+
+1. **Backend URL Configuration**  
+   File: `ExpoFE/app.json`
+   ```json
+   {
+     "expo": {
+       "extra": {
+         "backendUrl": "http://YOUR_PC_IP:8000"  // Replace YOUR_PC_IP with your machine's IP
+       }
+     }
+   }
+   ```
+
+Note: `ExpoFE` is the main frontend application folder. Other folders like `Frontend`, `ExpoFE_backup`, and `mobile` are for reference or backup purposes only.s guide details the configuration and setup steps needed to run both the frontend (Expo) and backend (Python FastAPI) components of the Multi-Agentic Healthcare System.
 
 ## System Architecture Overview
 
