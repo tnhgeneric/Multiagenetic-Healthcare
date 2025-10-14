@@ -36,12 +36,12 @@ export default function WelcomeScreen(/*{ navigation }: any*/) {
         </View>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/common/Login') }>
-            <Text style={styles.loginButtonText}>Log in</Text>
+          <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/(tabs)')} >
+            <Text style={styles.loginButtonText}>Get Started</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.createAccountButton} onPress={() => router.push('/common/CreateAccount') }>
-            <Text style={styles.createAccountButtonText}>Create an account</Text>
+          <TouchableOpacity style={styles.createAccountButton} onPress={() => router.push('/(tabs)')} >
+            <Text style={styles.createAccountButtonText}>Try Demo</Text>
           </TouchableOpacity>
 
           <Text style={styles.termsText}>

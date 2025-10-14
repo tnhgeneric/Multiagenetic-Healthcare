@@ -25,7 +25,7 @@ function debuggerHostBackend(): string | undefined {
     if (dbg && typeof dbg === 'string') {
       const host = dbg.split(':')[0];
       if (host && host !== 'localhost' && host !== '127.0.0.1') {
-        return `http://${host}:8000`;
+        return `http://${host}:8001`;
       }
     }
   } catch (e) {
@@ -35,7 +35,7 @@ function debuggerHostBackend(): string | undefined {
 }
 
 // Always use the configured backend URL from app.json or env, fall back to LAN IP
-export const BACKEND_BASE_URL: string = envBackendUrl() || 'http://192.168.1.25:8000';
+export const BACKEND_BASE_URL: string = envBackendUrl() || 'http://192.168.1.25:8001';
 
 // Developer note:
 // - When running the backend locally and testing on a physical device, set

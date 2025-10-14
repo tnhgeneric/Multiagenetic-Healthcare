@@ -23,15 +23,53 @@ export default function AgentChat() {
     setSending(true);
 
     try {
-      const payload = { prompt: userMsg.text, user_id: 'anonymous', session_id: String(Date.now()), workflow: 'default' };
+      const payload = {
+        prompt: userMsg.text,
+        user_id: 'anonymous',
+        session_id: String(Date.now()),
+        workflow: 'symptom_analysis'  // Use the symptom analysis workflow
+      };
       const resp = await callChatOrchestrate(payload);
-      const agentText = typeof resp === 'string' ? resp : (resp?.answer || JSON.stringify(resp));
+      console.log('Orchestrate response:', JSON.stringify(resp, null, 2));
+      
+      // Parse the orchestrate response
+      let agentText = '';
+      if (resp?.dispatch_results?.length > 0) {
+        // Combine responses from all agents
+        agentText = resp.dispatch_results
+          .map((r: any) => {
+            if (r.agent === 'symptom_analyzer' && r.result) {
+              return `Symptom Analysis:\n${r.result.identified_symptoms?.join(', ') || 'No symptoms identified'}\nSeverity: ${r.result.severity_level || 'Unknown'}`;
+            }
+            if (r.agent === 'disease_prediction' && r.result) {
+              return `\nPossible Conditions:\n${r.result.predicted_diseases?.join('\n') || 'No predictions available'}\nConfidence: ${r.result.confidence ? (r.result.confidence * 100).toFixed(0) + '%' : 'Unknown'}`;
+            }
+            return r.result ? JSON.stringify(r.result, null, 2) : '';
+          })
+          .filter((text: string) => text)
+          .join('\n\n');
+      }
+      
+      if (!agentText) {
+        agentText = 'No results available from the analysis. Response: ' + JSON.stringify(resp, null, 2);
+      }
+      
       const agentMsg: Message = { id: String(Date.now() + 1), text: agentText, from: 'agent' };
       setMessages(prev => [...prev, agentMsg]);
       // scroll to bottom
       setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 100);
     } catch (e: any) {
-      const errMsg: Message = { id: String(Date.now() + 2), text: 'Error: could not contact chat backend.', from: 'agent' };
+      console.error('Chat error:', {
+        error: e,
+        response: e?.response,
+        data: e?.response?.data,
+        status: e?.response?.status,
+        headers: e?.response?.headers,
+        config: e?.config,
+        message: e?.message,
+      });
+      const errorDetail = e?.response?.data?.detail || e?.message || 'Unknown error';
+      const errMsg: Message = { id: String(Date.now() + 2), text: `Error: ${errorDetail}`, from: 'agent' };
       setMessages(prev => [...prev, errMsg]);
     } finally {
       setSending(false);

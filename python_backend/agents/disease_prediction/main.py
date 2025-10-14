@@ -53,32 +53,48 @@ def predict_disease(request: DiseasePredictionRequest):
     if not vertex_llm:
         return DiseasePredictionResponse(error="VertexAI or API keys not configured. Please install langchain-google-vertexai and set environment variables.")
     try:
-        # Step 1: Enrich prompt with MCP/ACL
-        mcp_prompt = MCPACLPrompt(
-            symptoms=request.symptoms,
-            context="Disease prediction for healthcare workflow"
-        )
-        # Build the prompt string for LLM
-        prompt = (
-            f"Protocol: {mcp_prompt.protocol}\n"
-            f"Agent: {mcp_prompt.agent}\n"
-            f"Action: {mcp_prompt.action}\n"
-            f"Context: {mcp_prompt.context}\n"
-            f"Symptoms: {', '.join(mcp_prompt.symptoms)}\n"
-        )
-        # Step 2: Send enriched prompt to Gemini-Pro LLM
+        # Build a clear prompt for the medical diagnosis
+        prompt = f"""You are a medical AI assistant. Based on the following symptoms, analyze and predict possible diseases:
+
+Symptoms:
+{', '.join(request.symptoms)}
+
+Please provide your response in this format:
+{{
+    "predicted_diseases": ["Disease1", "Disease2", ...],
+    "confidence": 0.XX,
+    "explanation": "Brief explanation of the predictions",
+    "severity": "low/medium/high",
+    "recommendation": "Brief medical recommendation"
+}}"""
+
+        # Send to Gemini-Pro LLM
         llm_response = vertex_llm(prompt)
-        # Step 3: Package LLM response in MCP/ACL format
-        mcp_response = {
-            "protocol": "MCP",
-            "agent": "disease_prediction",
-            "action": "predict_disease_result",
-            "context": "Disease prediction result for healthcare workflow",
-            "llm_raw_response": llm_response
-        }
-        predicted_diseases = [llm_response]  # Replace with actual parsing logic
-        result = DiseasePredictionResult(predicted_diseases=predicted_diseases, confidence=0.9)
-        # Optionally, you can include mcp_response in the API response for orchestration
+
+        # Try to extract structured disease predictions
+        import json
+        try:
+            # Try to find JSON content in the response
+            start_idx = llm_response.find('{')
+            end_idx = llm_response.rfind('}') + 1
+            if start_idx != -1 and end_idx != -1:
+                json_str = llm_response[start_idx:end_idx]
+                parsed_response = json.loads(json_str)
+                diseases = parsed_response.get('predicted_diseases', [])
+                confidence = parsed_response.get('confidence', 0.8)
+            else:
+                # Fallback: treat the whole response as a disease prediction
+                diseases = [d.strip() for d in llm_response.split(',') if d.strip()]
+                confidence = 0.7
+        except json.JSONDecodeError:
+            # If JSON parsing fails, use the raw response
+            diseases = [llm_response.strip()]
+            confidence = 0.6
+
+        result = DiseasePredictionResult(
+            predicted_diseases=diseases,
+            confidence=confidence
+        )
         return DiseasePredictionResponse(result=result)
     except Exception as e:
         return DiseasePredictionResponse(error=str(e))

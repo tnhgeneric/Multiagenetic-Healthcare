@@ -1,50 +1,62 @@
 
-import requests
+from typing import Dict, Any, List
 
 class InputHandler:
-    def enrich_and_send_to_llm(self, user_input, user_id, session_id, workflow, llm_endpoint_url):
-        """
-        Enrich the user prompt with context and send it to the LLM for MCP/ACL generation.
-        Returns the LLM's structured MCP/ACL JSON output.
-        """
-        # Basic enrichment
-        context = {
-            "user_id": user_id,
-            "session_id": session_id,
-            "workflow": workflow
-        }
-        payload = {
-            "prompt": user_input,
-            "context": context
-        }
-        # Send to LLM endpoint (POST request)
-        response = requests.post(llm_endpoint_url, json=payload)
-        response.raise_for_status()
-        return response.json()
     """
-    Receives and validates MCP/ACL JSON output from the LLM or user.
-    Extracts plan and actions for orchestration.
-    Recognizes patient journey queries and builds the correct ACL structure.
+    Handles MCP/ACL validation and preparation for task planning.
+    No longer responsible for enrichment or LLM communication.
     """
-
-    def validate(self, mcp_acl_json):
-        # TODO: Implement schema validation
-        return True
-
-    def extract_plan(self, mcp_acl_json):
-        return mcp_acl_json.get('acl', [])
-
-    def build_acl_for_patient_journey(self, user_input, user_id, session_id):
+    
+    def validate(self, mcp_acl_json: Dict[str, Any]) -> bool:
         """
-        Recognize patient journey queries and build ACL for Patient Journey Agent.
+        Validates the structure and content of MCP/ACL JSON
         """
-        # Simple keyword-based intent recognition (can be replaced with NLP/LLM)
-        if "hospital visit" in user_input.lower() or "my journey" in user_input.lower():
-            return [{
-                "agent": "Patient Journey Agent",
-                "action": "get_journey",
-                "params": {
-                    "patient_id": user_id
-                }
-            }]
-        return []
+        try:
+            # Validate required top-level structure
+            required_fields = ["agents", "workflow", "actions", "data_flow"]
+            if not all(field in mcp_acl_json for field in required_fields):
+                return False
+
+            # Validate actions
+            for action in mcp_acl_json["actions"]:
+                if not all(field in action for field in ["agent", "action", "params"]):
+                    return False
+
+            # Validate data flow
+            for flow in mcp_acl_json["data_flow"]:
+                if not all(field in flow for field in ["from", "to", "data"]):
+                    return False
+
+            return True
+        except Exception:
+            return False
+
+    def extract_plan(self, mcp_acl_json: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Extracts executable plan from validated MCP/ACL
+        """
+        if not self.validate(mcp_acl_json):
+            raise ValueError("Invalid MCP/ACL structure")
+
+        # Extract ordered list of actions with their dependencies
+        plan = []
+        for action in mcp_acl_json["actions"]:
+            # Find related data flows
+            input_flows = [
+                flow for flow in mcp_acl_json["data_flow"]
+                if flow["to"] == action["agent"]
+            ]
+            output_flows = [
+                flow for flow in mcp_acl_json["data_flow"]
+                if flow["from"] == action["agent"]
+            ]
+
+            plan.append({
+                "agent": action["agent"],
+                "action": action["action"],
+                "params": action["params"],
+                "inputs": [flow["data"] for flow in input_flows],
+                "outputs": [flow["data"] for flow in output_flows]
+            })
+
+        return plan

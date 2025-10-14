@@ -1,40 +1,66 @@
 
 import os
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from typing import Dict, Any
+
 from orchestration.input_handler import InputHandler
 from orchestration.task_planner import TaskPlanner
 from orchestration.agent_dispatcher import AgentDispatcher
+from services.enrichment_service import EnrichmentService
+from services.llm_service import LLMService
 
-# Initialize FastAPI app ONCE
+# Initialize FastAPI app
 app = FastAPI(title="Orchestration Agent API")
 
-# LLM endpoint URL (set this to your actual LLM endpoint)
-LLM_ENDPOINT_URL = os.getenv("LLM_ENDPOINT_URL", "http://localhost:9000/llm")
+# Enable CORS
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
-# Initialize handlers
+# Initialize services and handlers
+enrichment_service = EnrichmentService()
+llm_service = LLMService()
 input_handler = InputHandler()
 task_planner = TaskPlanner()
 agent_dispatcher = AgentDispatcher()
 
-# Pydantic model for chat input
-class ChatOrchestrateInput(BaseModel):
-    prompt: str
-    user_id: str
-    session_id: str
-    workflow: str
+class MCPACLInput(BaseModel):
+    mcp_acl: Dict[str, Any]
 
-@app.post("/chat_orchestrate")
-def chat_orchestrate(input_data: ChatOrchestrateInput):
-    """Accepts a user prompt and context, enriches it, sends to LLM, then orchestrates."""
-    # Step 1: Enrich and send to LLM for MCP/ACL generation
-    mcp_acl_json = input_handler.enrich_and_send_to_llm(
-        user_input=input_data.prompt,
-        user_id=input_data.user_id,
-        session_id=input_data.session_id,
-        workflow=input_data.workflow,
-        llm_endpoint_url=LLM_ENDPOINT_URL
-    )
+@app.post("/orchestrate")
+async def orchestrate(input_data: MCPACLInput):
+    """
+    Receives pre-enriched MCP/ACL JSON and orchestrates the execution.
+    The enrichment and LLM processing should happen before this endpoint.
+    """
+    try:
+        # Step 1: Validate MCP/ACL structure
+        if not input_handler.validate(input_data.mcp_acl):
+            raise HTTPException(status_code=400, detail="Invalid MCP/ACL structure")
+
+        # Step 2: Extract execution plan
+        plan = input_handler.extract_plan(input_data.mcp_acl)
+        
+        # Step 3: Sequence tasks
+        sequenced_tasks = task_planner.sequence_tasks(plan)
+        
+        # Step 4: Dispatch tasks to sub-agents
+        results = agent_dispatcher.dispatch(sequenced_tasks)
+        
+        return {
+            "status": "success",
+            "results": results
+        }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Orchestration error: {str(e)}")
     # Step 2: Validate MCP/ACL JSON
     if not input_handler.validate(mcp_acl_json):
         return {"error": "Invalid MCP/ACL structure from LLM"}
