@@ -317,6 +317,439 @@ curl -X POST http://192.168.1.25:8001/orchestrate -H "Content-Type: application/
 # Expected: 200 OK with valid JSON response
 ```
 
+## Frontend Implementation
+
+### Initial Setup
+1. **Environment Requirements**
+   ```bash
+   Node.js >= 20.0.0 (Recommended: 20.9.0 or later)
+   npm >= 10.0.0
+   Expo CLI (latest)
+   Python >= 3.11 for backend services
+   ```
+
+   To verify your versions:
+   ```bash
+   node --version    # Should show v20.x.x
+   npm --version     # Should show v10.x.x
+   python --version  # Should show Python 3.11 or higher
+   ```
+
+   Note: All backend services must be running before starting the frontend:
+   - Prompt Processor (8000)
+   - Orchestration Agent (8001)
+   - Disease Prediction (8002)
+   - Symptom Analyzer (8003)
+
+2. **Backend Setup**
+   ```bash
+   # Create and activate Python virtual environment
+   cd python_backend
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+
+   # Install Python dependencies
+   pip install -r requirements.txt
+   ```
+
+3. **Frontend Installation Steps**
+   ```bash
+   # Install Expo CLI globally
+   npm install -g expo-cli
+
+   # Navigate to ExpoFE directory
+   cd ExpoFE
+
+   # Install dependencies
+   npm install
+
+   # Required packages
+   npm install @react-navigation/native @react-navigation/stack
+   npm install axios
+   npm install @react-native-async-storage/async-storage
+   npm install react-native-gesture-handler
+   npm install expo-router
+   npm install @expo/vector-icons
+   ```
+
+3. **Environment Configuration**
+   Create `config/backendConfig.ts`:
+   ```typescript
+   import Constants from 'expo-constants';
+
+   export const BACKEND_BASE_URL = Constants.expoConfig?.extra?.backendUrl 
+     || 'http://YOUR_PC_IP:8001';
+   ```
+
+   Update `app.json`:
+   ```json
+   {
+     "expo": {
+       "name": "CareFlow",
+       "slug": "careflow",
+       "version": "1.0.0",
+       "orientation": "portrait",
+       "extra": {
+         "backendUrl": "http://YOUR_PC_IP:8001"
+       },
+       "android": {
+         "usesCleartextTraffic": true,
+         "package": "com.yourcompany.careflow",
+         "adaptiveIcon": {
+           "foregroundImage": "./assets/adaptive-icon.png",
+           "backgroundColor": "#ffffff"
+         }
+       }
+     }
+   }
+   ```
+
+4. **Network Configuration**
+   
+   First, find your PC's IP address:
+   ```powershell
+   # Run ipconfig and look for IPv4 Address
+   ipconfig
+   ```
+
+   Then configure Windows Firewall:
+   ```powershell
+   # Allow all required service ports
+   New-NetFirewallRule -DisplayName "Allow Python FastAPI 8000" -Direction Inbound -LocalPort 8000 -Protocol TCP -Action Allow
+   New-NetFirewallRule -DisplayName "Allow Python FastAPI 8001" -Direction Inbound -LocalPort 8001 -Protocol TCP -Action Allow
+   New-NetFirewallRule -DisplayName "Allow Python FastAPI 8002" -Direction Inbound -LocalPort 8002 -Protocol TCP -Action Allow
+   New-NetFirewallRule -DisplayName "Allow Python FastAPI 8003" -Direction Inbound -LocalPort 8003 -Protocol TCP -Action Allow
+   ```
+
+5. **Android Configuration**
+   Create `android/app/src/main/res/xml/network_security_config.xml`:
+   ```xml
+   <?xml version="1.0" encoding="utf-8"?>
+   <network-security-config>
+       <base-config cleartextTrafficPermitted="true">
+           <trust-anchors>
+               <certificates src="system" />
+           </trust-anchors>
+       </base-config>
+   </network-security-config>
+   ```
+
+6. **Starting the Services**
+
+   Start backend services (in separate terminals):
+   ```powershell
+   # Terminal 1: Prompt Processor
+   cd python_backend
+   .\.venv\Scripts\Activate.ps1
+   uvicorn services.prompt_processor:app --reload --host 0.0.0.0 --port 8000
+
+   # Terminal 2: Orchestration Agent
+   cd python_backend
+   .\.venv\Scripts\Activate.ps1
+   uvicorn orchestration_agent.main:app --reload --host 0.0.0.0 --port 8001
+
+   # Terminal 3: Disease Prediction Service
+   cd python_backend
+   .\.venv\Scripts\Activate.ps1
+   uvicorn agents.disease_prediction.main:app --host 0.0.0.0 --port 8002
+
+   # Terminal 4: Symptom Analyzer Service
+   cd python_backend
+   .\.venv\Scripts\Activate.ps1
+   uvicorn agents.symptom_analyzer.main:app --host 0.0.0.0 --port 8003
+   ```
+
+   Start frontend (in a new terminal):
+   ```powershell
+   # Terminal 5: Frontend
+   cd ExpoFE
+   npx expo start
+
+   # For Android
+   npx expo run:android
+
+   # For iOS
+   npx expo run:ios
+   ```
+
+7. **Verify Setup**
+   Test these health endpoints in your browser:
+   1. `http://YOUR_PC_IP:8000/health` (Prompt Processor)
+   2. `http://YOUR_PC_IP:8001/health` (Orchestration Agent)
+   3. `http://YOUR_PC_IP:8002/health` (Disease Prediction)
+   4. `http://YOUR_PC_IP:8003/health` (Symptom Analyzer)
+
+### Directory Structure
+```plaintext
+ExpoFE/
+├── app/
+│   ├── (tabs)/
+│   │   ├── home.tsx         # Home screen with chat interface
+│   │   ├── profile.tsx      # User profile management
+│   │   └── settings.tsx     # App settings
+│   ├── auth/
+│   │   └── login.tsx        # Authentication screens
+│   └── index.tsx            # Entry point
+├── components/
+│   ├── ui/
+│   │   ├── ChatInput.tsx    # Chat input component
+│   │   ├── MessageBubble.tsx# Chat message display
+│   │   └── Prediction.tsx   # Disease prediction display
+│   └── common/
+│       └── Loading.tsx      # Loading states
+├── services/
+│   ├── backendApi.ts        # API integration with backend
+│   └── types.ts             # TypeScript interfaces
+└── config/
+    └── backendConfig.ts     # Backend URL configuration
+```
+
+### API Integration
+```typescript
+// services/backendApi.ts
+import axios from 'axios';
+import { BACKEND_BASE_URL } from '../config/backendConfig';
+
+interface PredictionRequest {
+  prompt: string;
+  user_id: string;
+  session_id: string;
+  workflow: string;
+}
+
+export const predictDisease = async (symptoms: string): Promise<any> => {
+  try {
+    const response = await axios.post(`${BACKEND_BASE_URL}/orchestrate`, {
+      prompt: symptoms,
+      user_id: 'current_user',
+      session_id: 'session_123',
+      workflow: 'medical_diagnosis'
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error in disease prediction:', error);
+    throw error;
+  }
+};
+```
+
+### Chat Interface
+```typescript
+// components/ui/ChatInput.tsx
+import React, { useState } from 'react';
+import { View, TextInput, Button } from 'react-native';
+import { predictDisease } from '../../services/backendApi';
+
+export const ChatInput: React.FC = () => {
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      const result = await predictDisease(input);
+      // Handle prediction result
+    } catch (error) {
+      // Handle error
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <TextInput
+        value={input}
+        onChangeText={setInput}
+        placeholder="Describe your symptoms..."
+      />
+      <Button 
+        title="Send" 
+        onPress={handleSubmit}
+        disabled={loading}
+      />
+    </View>
+  );
+};
+```
+
+### Results Display
+```typescript
+// components/ui/Prediction.tsx
+import React from 'react';
+import { View, Text } from 'react-native';
+
+interface PredictionProps {
+  predictions: Array<{
+    condition: string;
+    confidence: number;
+    supporting_symptoms: string[];
+  }>;
+}
+
+export const Prediction: React.FC<PredictionProps> = ({ predictions }) => {
+  return (
+    <View style={styles.container}>
+      {predictions.map((pred, index) => (
+        <View key={index} style={styles.predictionCard}>
+          <Text style={styles.condition}>{pred.condition}</Text>
+          <Text>Confidence: {(pred.confidence * 100).toFixed(1)}%</Text>
+          <Text>Based on: {pred.supporting_symptoms.join(', ')}</Text>
+        </View>
+      ))}
+    </View>
+  );
+};
+```
+
+### Error Handling
+```typescript
+// services/errorHandling.ts
+export const handleApiError = (error: any) => {
+  if (error.response) {
+    // Server responded with error
+    switch (error.response.status) {
+      case 404:
+        return 'Service not available';
+      case 500:
+        return 'Internal server error';
+      default:
+        return 'Something went wrong';
+    }
+  } else if (error.request) {
+    // No response received
+    return 'Network error - please check your connection';
+  }
+  return 'An unexpected error occurred';
+};
+```
+
+### Additional Configuration Files
+
+1. **TypeScript Configuration**
+   Create `tsconfig.json`:
+   ```json
+   {
+     "extends": "expo/tsconfig.base",
+     "compilerOptions": {
+       "strict": true,
+       "baseUrl": ".",
+       "paths": {
+         "@/*": ["*"],
+         "@components/*": ["components/*"],
+         "@services/*": ["services/*"],
+         "@config/*": ["config/*"]
+       }
+     },
+     "include": ["**/*.ts", "**/*.tsx"],
+     "exclude": ["node_modules"]
+   }
+   ```
+
+2. **ESLint Configuration**
+   Create `.eslintrc.js`:
+   ```javascript
+   module.exports = {
+     extends: ['universe/native', 'universe/shared/typescript-analysis'],
+     overrides: [
+       {
+         files: ['*.ts', '*.tsx', '*.d.ts'],
+         parserOptions: {
+           project: './tsconfig.json'
+         }
+       }
+     ],
+     rules: {
+       'import/order': 'warn'
+     }
+   };
+   ```
+
+3. **Babel Configuration**
+   Update `babel.config.js`:
+   ```javascript
+   module.exports = function (api) {
+     api.cache(true);
+     return {
+       presets: ['babel-preset-expo'],
+       plugins: [
+         'expo-router/babel',
+         ['module-resolver', {
+           root: ['./'],
+           alias: {
+             '@': './',
+             '@components': './components',
+             '@services': './services',
+             '@config': './config'
+           }
+         }]
+       ]
+     };
+   };
+   ```
+
+### Testing Setup
+
+1. **Unit Testing Configuration**
+   ```bash
+   # Install testing dependencies
+   npm install --save-dev jest @testing-library/react-native @testing-library/jest-native
+   ```
+
+   Create `jest.config.js`:
+   ```javascript
+   module.exports = {
+     preset: 'jest-expo',
+     transformIgnorePatterns: [
+       'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg)'
+     ],
+     setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect']
+   };
+   ```
+
+2. **Sample Test**
+   Create `components/ui/__tests__/ChatInput.test.tsx`:
+   ```typescript
+   import React from 'react';
+   import { render, fireEvent } from '@testing-library/react-native';
+   import { ChatInput } from '../ChatInput';
+
+   describe('ChatInput', () => {
+     it('handles user input correctly', () => {
+       const { getByPlaceholderText, getByText } = render(<ChatInput />);
+       const input = getByPlaceholderText('Describe your symptoms...');
+       fireEvent.changeText(input, 'I have a headache');
+       expect(input.props.value).toBe('I have a headache');
+     });
+   });
+   ```
+
+### Style Guide and Best Practices
+
+1. **Component Structure**
+   - Keep components small and focused
+   - Use TypeScript interfaces for props
+   - Implement error boundaries
+   - Follow React Native performance best practices
+
+2. **State Management**
+   - Use React hooks for local state
+   - Consider Context API for global state
+   - Implement proper error handling
+   - Cache API responses when appropriate
+
+3. **Code Organization**
+   - Follow feature-based structure
+   - Keep business logic in services
+   - Use custom hooks for shared logic
+   - Implement proper type checking
+
+4. **Testing Guidelines**
+   - Write unit tests for components
+   - Test API integration
+   - Implement E2E tests for critical flows
+   - Mock external dependencies
+
 ## Future Improvements
 
 1. **Enhanced Error Handling**
@@ -338,6 +771,13 @@ curl -X POST http://192.168.1.25:8001/orchestrate -H "Content-Type: application/
    - Service health monitoring
    - Request/response logging
    - Performance metrics
+
+5. **Frontend Enhancements**
+   - Offline support
+   - Chat history persistence
+   - Real-time symptom analysis
+   - Enhanced UI/UX for predictions
+   - Accessibility improvements
 
 ## Conclusion
 
