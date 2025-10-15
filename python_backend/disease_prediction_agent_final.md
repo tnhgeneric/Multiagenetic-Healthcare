@@ -93,11 +93,18 @@ python_backend/
 python_backend/
 ├── agents/
 │   ├── disease_prediction/
-│   │   ├── main.py
-│   │   ├── models.py
-│   │   └── utils.py
+│   │   ├── main.py             # Currently contains all logic and models
+│   │   ├── models.py          # [Planned] Will contain Pydantic models
+│   │   └── utils.py           # [Planned] Will contain utility functions
 │   └── symptom_analyzer/
 │       └── main.py
+
+Note: The models.py and utils.py files are planned for future implementation
+to better separate concerns and follow coding best practices. Currently, all
+functionality is in main.py. Future updates will:
+- Move data models to models.py (DiseasePredictionRequest, MCPACLPrompt, etc.)
+- Move utility functions to utils.py (prediction calculations, data processing)
+This separation will improve code organization and maintainability.
 ├── orchestration/
 │   ├── main.py
 │   ├── agent_dispatcher.py
@@ -233,7 +240,7 @@ const mcpPayload = {
 ```
 
 ## Integration Testing
-
+## A complte workflow for the disease prediction agent available in step10-integration-env-setup.md fiel under Detailed System Flow
 ### Test Workflow
 1. User inputs symptoms in natural language
 2. Symptom analyzer processes and structures the input
