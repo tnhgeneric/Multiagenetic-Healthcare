@@ -17,14 +17,23 @@ export default function RootLayout() {
       />
       <Stack 
         screenOptions={{
-          // Use contentStyle on the Stack component instead of directly on Fragments
           contentStyle: { 
             backgroundColor: APP_BACKGROUND_COLOR 
           },
-          // Hide header to remove the navigation bar as well
           headerShown: false
         }}
-      />
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="common/WelcomeScreen" />
+        <Stack.Screen 
+          name="(tabs)"
+          options={{ 
+            headerShown: false,
+            animation: 'slide_from_right'
+          }} 
+        />
+        <Stack.Screen name="common/AgentChat" />
+      </Stack>
     </View>
   );
 }

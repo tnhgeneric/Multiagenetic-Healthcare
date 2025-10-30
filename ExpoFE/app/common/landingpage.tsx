@@ -27,7 +27,7 @@ const Landingpage: React.FC = () => {
 
        const handleSkip = () => {
         // Navigate immediately if user taps anywhere
-        router.push('/common/WelcomeScreen');
+          router.push('/common/WelcomeScreen');
       };  return (
         <TouchableOpacity 
       style={styles.container} 

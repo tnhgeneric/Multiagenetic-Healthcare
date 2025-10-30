@@ -1,11 +1,33 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, Image, TouchableOpacity, ScrollView, Dimensions, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styles from './WelcomeScreen.styles';
 import { useRouter } from 'expo-router';
 
 export default function WelcomeScreen(/*{ navigation }: any*/) {
   const router = useRouter();
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const { width } = Dimensions.get('window');
+  const scrollViewRef = useRef<ScrollView>(null);
+  const totalSlides = 3;
+
+  const scrollToNextSlide = () => {
+    if (scrollViewRef.current) {
+      const nextSlide = (currentSlide + 1) % totalSlides;
+      scrollViewRef.current.scrollTo({ x: nextSlide * width, animated: true });
+      setCurrentSlide(nextSlide);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      scrollToNextSlide();
+    }, 3000); // Change slide every 3 seconds
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [currentSlide, width]);
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.backgroundGradient} />
@@ -19,28 +41,66 @@ export default function WelcomeScreen(/*{ navigation }: any*/) {
 
       <View style={styles.contentContainer}>
         <View style={styles.walkthroughContainer}>
-          <View style={styles.slide}>
-            <View style={styles.imageContainer}>
-              <Image
-                source={require('../../assets/images/logo.png')}
-                style={styles.walkthroughImage}
-                resizeMode="cover"
+          <ScrollView 
+            ref={scrollViewRef}
+            horizontal 
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={(event: NativeSyntheticEvent<NativeScrollEvent>) => {
+              const slide = Math.round(event.nativeEvent.contentOffset.x / width);
+              setCurrentSlide(slide);
+            }}
+            scrollEventThrottle={16}
+          >
+            {[
+              {
+                image: require('../../assets/images/walk-1.jpg'),
+                title: 'AI-Powered Health Assistant',
+                description: 'Get instant health insights and personalized care recommendations'
+              },
+              {
+                image: require('../../assets/images/walk-2.jpg'),
+                title: 'Smart Patient Journey',
+                description: 'Track your health journey with intelligent monitoring and support'
+              },
+              {
+                image: require('../../assets/images/walk-3.jpg'),
+                title: 'Multi-Agent Care',
+                description: 'Coordinated care through our advanced multi-agent system'
+              }
+            ].map((slide, index) => (
+              <View key={index} style={[styles.slide, { width }]}>
+                <View style={styles.imageContainer}>
+                  <Image
+                    source={slide.image}
+                    style={styles.walkthroughImage}
+                    resizeMode="cover"
+                  />
+                </View>
+                <Text style={styles.slideTitle}>{slide.title}</Text>
+                <Text style={styles.slideDescription}>{slide.description}</Text>
+              </View>
+            ))}
+          </ScrollView>
+          <View style={styles.pagination}>
+            {[0, 1, 2].map((dot, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.paginationDot,
+                  currentSlide === index && styles.paginationDotActive
+                ]}
               />
-            </View>
-
-            <Text style={styles.slideTitle}>Welcome to CareFlow</Text>
-            <Text style={styles.slideDescription}>
-              Smart, connected patient journeys and multi-agent orchestration for better outcomes.
-            </Text>
+            ))}
           </View>
         </View>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/(tabs)')} >
+          <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/auth/login')} >
             <Text style={styles.loginButtonText}>Get Started</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.createAccountButton} onPress={() => router.push('/(tabs)')} >
+          <TouchableOpacity style={styles.createAccountButton} onPress={() => router.push('/common/AgentChat')} >
             <Text style={styles.createAccountButtonText}>Try Demo</Text>
           </TouchableOpacity>
 

@@ -78,6 +78,24 @@ const styles = StyleSheet.create({
       height: height * 0.45,
       alignItems: 'center',
     },
+    pagination: {
+      flexDirection: 'row',
+      position: 'absolute',
+      bottom: 10,
+      alignSelf: 'center'
+    },
+    paginationDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginHorizontal: 4,
+      backgroundColor: COLORS.gray,
+      opacity: 0.5
+    },
+    paginationDotActive: {
+      backgroundColor: COLORS.primary,
+      opacity: 1
+    },
     slide: {
       width: width,
       alignItems: 'center',
