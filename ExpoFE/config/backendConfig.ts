@@ -35,7 +35,10 @@ function debuggerHostBackend(): string | undefined {
 }
 
 // Always use the configured backend URL from app.json or env, fall back to LAN IP
-export const BACKEND_BASE_URL: string = envBackendUrl() || 'http://192.168.1.25:8001';
+const resolvedUrl = envBackendUrl() || 'http://192.168.1.25:8001';
+console.log('[Backend Config] Resolved backend URL:', resolvedUrl);
+console.log('[Backend Config] Source:', envBackendUrl() ? 'app.config/env' : 'default fallback');
+export const BACKEND_BASE_URL: string = resolvedUrl;
 
 // Developer note:
 // - When running the backend locally and testing on a physical device, set

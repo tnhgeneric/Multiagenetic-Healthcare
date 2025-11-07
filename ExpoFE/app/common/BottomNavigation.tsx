@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather,} from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import SideNavigationDrawer from './sideNavigation';
+
+type RootStackParamList = {
+  Home: undefined;
+  Statistics: undefined;
+  Notifications: undefined;
+  More: undefined;
+  PatientHome: undefined;
+  NotificationScreen: undefined;
+};
 
 interface BottomNavigationProps {
   activeTab: 'home' | 'statistics' | 'notification' | 'more' | 'none';
@@ -13,7 +22,7 @@ export default function BottomNavigation({
   activeTab, 
   onTabPress = () => {} 
 }: BottomNavigationProps) {
-  const router = useRouter();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
 
    const handleTabPress = (tabName: string) => {
@@ -23,13 +32,13 @@ export default function BottomNavigation({
     // Handle navigation based on tab
     switch (tabName) {
       case 'home':
-        router.push('../patientProfile/patientHome'); 
+        navigation.navigate('Home'); 
         break;
       case 'statistics':
-        router.push('../patientProfile/statistics'); 
+        navigation.navigate('Statistics'); 
         break;
       case 'notification':
-        router.push('../patientProfile/notification'); 
+        navigation.navigate('Notifications'); 
         break;
       case 'more':
         // Toggle side navigation drawer instead of navigating

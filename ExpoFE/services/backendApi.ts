@@ -39,7 +39,37 @@ api.interceptors.request.use((config) => {
 });
 
 // Add response interceptor for retries
-api.interceptors.response.use(undefined, axiosRetry);
+api.interceptors.response.use(undefined, (error) => {
+  // Log detailed error information
+  console.error('Network Error Details:', {
+    url: error.config?.url,
+    baseURL: error.config?.baseURL,
+    fullUrl: `${error.config?.baseURL || ''}${error.config?.url || ''}`,
+    method: error.config?.method,
+    status: error.response?.status,
+    statusText: error.response?.statusText,
+    message: error.message,
+    isNetworkError: error.isAxiosError && !error.response,
+    data: error.response?.data,
+    headers: error.config?.headers,
+    code: error.code,
+    name: error.name
+  });
+  
+  // Test the backend URL directly
+  fetch(`${error.config?.baseURL}/health`)
+    .then(response => response.text())
+    .then(text => console.log('Health check response:', text))
+    .catch(err => console.log('Health check failed:', err));
+  
+  return axiosRetry(error);
+});
+
+// Log all requests
+api.interceptors.request.use((config) => {
+  console.log('Making request to:', `${config.baseURL || ''}${config.url || ''}`);
+  return config;
+});
 
 // Types for requests/responses (lightweight)
 export interface PatientJourneyRequest {

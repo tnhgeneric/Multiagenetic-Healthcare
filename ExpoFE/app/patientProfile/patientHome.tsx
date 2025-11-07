@@ -16,8 +16,15 @@ import {
 import { FontAwesome, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import styles from './patientHome.styles';
 import BottomNavigation from '../common/BottomNavigation';
-import { useRouter } from 'expo-router';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { auth, db } from '../../config/firebaseConfig';
+
+type RootStackParamList = {
+  ViewHistory: undefined;
+  ActiveMedications: undefined;
+  LabResults: undefined;
+  Login: undefined;
+};
 import { doc, getDoc } from 'firebase/firestore';
 import { getAllHealthNews } from '../../services/newsService';
 
@@ -54,7 +61,7 @@ interface NewsStats {
 }
 
 export default function PatientHome() {
-  const router = useRouter();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const [userProfile, setUserProfile] = useState<UserProfile>({
     fullName: '',
     firstName: '',
@@ -233,15 +240,15 @@ export default function PatientHome() {
 
   // Navigation handlers
   const handleViewHistory = () => {
-    router.push('./viewhistory'); 
+    navigation.navigate('ViewHistory'); 
   };
 
   const handleMedications = () => {
-    router.push('./activemedications'); 
+    navigation.navigate('ActiveMedications'); 
   };
 
   const handleLabResults = () => {
-    router.push('./labresults'); 
+    navigation.navigate('LabResults'); 
   };
 
   // Fetch user profile data
@@ -251,7 +258,7 @@ export default function PatientHome() {
         const currentUser = auth.currentUser;
         if (!currentUser) {
           console.log("No user is signed in");
-          router.replace('../login');
+          navigation.navigate('Login');
           return;
         }
 
@@ -302,7 +309,7 @@ export default function PatientHome() {
     });
     
     return () => unsubscribe();
-  }, [router]);
+  }, [navigation]);
 
   // Enhanced news item renderer with priority indicators
   const renderNewsItem = ({ item }: { item: NewsItem }) => (

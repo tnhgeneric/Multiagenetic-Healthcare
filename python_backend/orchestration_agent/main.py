@@ -13,7 +13,20 @@ from services.llm_service import LLMService
 # Initialize FastAPI app
 app = FastAPI(title="Orchestration Agent API")
 
-# Enable CORS
+@app.get("/health")
+async def health_check():
+    """Health check endpoint with CORS headers"""
+    response = JSONResponse(
+        content={"status": "healthy", "service": "orchestration_agent"},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
+    return response
+
+# Enable CORS with specific headers
 from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
@@ -21,7 +34,23 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
+    expose_headers=["*"],  # Expose all headers
 )
+
+# Add specific headers to health endpoint
+from fastapi.responses import JSONResponse
+@app.options("/health")
+async def health_options():
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Max-Age": "86400",  # 24 hours
+    }
+    return JSONResponse(
+        content={},
+        headers=headers
+    )
 
 # Initialize services and handlers
 enrichment_service = EnrichmentService()

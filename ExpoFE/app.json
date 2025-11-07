@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "extra": {
       "backendUrl": "http://192.168.1.25:8001",
       "eas": {
@@ -26,9 +26,9 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "package": "com.tnhgeneric.multiagenetic",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.tnhgeneric.ExpoFE",
       "allowBackup": true,
       "usesCleartextTraffic": true
     },
