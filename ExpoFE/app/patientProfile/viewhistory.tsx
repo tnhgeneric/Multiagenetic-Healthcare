@@ -72,10 +72,10 @@ export default function ViewHistory() {
         if (records && records.length > 0) {
           const converted = records.map((record, index) => ({
             id: record.id || index.toString(),
-            date: record.visitDate ? new Date(record.visitDate).toLocaleDateString() : 'Unknown Date',
-            title: record.visitReason || 'Medical Visit',
-            subtitle: record.doctorName ? `Dr. ${record.doctorName} - ${record.department || 'General'}` : 'Medical Professional',
-            icon: getIconForVisit(record.visitReason),
+            date: record.date ? new Date(record.date).toLocaleDateString() : 'Unknown Date',
+            title: record.title || 'Medical Record',
+            subtitle: record.doctor ? `Dr. ${record.doctor}${record.hospital ? ` - ${record.hospital}` : ''}` : 'Medical Professional',
+            icon: getIconForVisit(record.type || record.title),
           }));
           setHistoryData(converted.sort((a, b) => 
             new Date(b.date).getTime() - new Date(a.date).getTime()

@@ -7,7 +7,8 @@ import {
     ScrollView,
     FlatList,
     ActivityIndicator,
-    Alert
+    Alert,
+    TextInput,
 } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -45,7 +46,7 @@ export default function ActiveMedications() {
                     const withStatus = data.map(med => ({
                         ...med,
                         daysRemaining: calculateDaysRemaining(med.endDate),
-                        refillStatus: calculateRefillStatus(med.quantity || 0),
+                        refillStatus: 'OK' as const,
                     }));
                     setMedications(withStatus);
                 } else {
