@@ -116,7 +116,7 @@ export default function LabReports() {
     const grouped: Record<string, LabReportDisplay[]> = {};
     
     reports.forEach(report => {
-      const dateStr = report.testDate ? new Date(report.testDate).toLocaleDateString() : 'Unknown Date';
+      const dateStr = report.date ? new Date(report.date).toLocaleDateString() : 'Unknown Date';
       if (!grouped[dateStr]) {
         grouped[dateStr] = [];
       }
@@ -124,12 +124,17 @@ export default function LabReports() {
       // Convert Firestore format to display format
       const displayReport: LabReportDisplay = {
         id: report.id || '',
-        name: report.testType || 'Lab Report',
-        results: report.results || [],
-        pdfUrl: report.pdfUrl,
-        imageUrl: report.imageUrl,
-        type: (report.pdfUrl ? 'pdf' : 'image') as 'pdf' | 'image',
-        testDate: report.testDate,
+        name: report.testName || 'Lab Report',
+        results: Array.isArray(report.results) ? Object.entries(report.results).map(([name, value]) => ({
+          name,
+          value: typeof value === 'number' ? value : parseFloat(String(value)) || 0,
+          unit: report.normalRange?.[name] || '',
+          status: 'normal' as const,
+        })) : [],
+        pdfUrl: report.reportUrl,
+        imageUrl: undefined,
+        type: (report.reportUrl ? 'pdf' : 'image') as 'pdf' | 'image',
+        testDate: report.date,
       };
       
       grouped[dateStr].push(displayReport);
