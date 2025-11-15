@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import { useRouter } from 'expo-router';
 import { auth } from '../../config/firebaseConfig';
 import { signOut } from 'firebase/auth';
 import styles from './sideNavigation.styles';
+import AuthService from '../../services/authService';
 
 interface SideNavigationProps {
   isVisible: boolean;
@@ -41,6 +42,7 @@ export default function SideNavigation({
   onClose
 }: SideNavigationProps) {
   const router = useRouter();
+  const [isDoctor, setIsDoctor] = useState<boolean>(false);
 
   const handleSignOut = async () => {
     try {
@@ -60,58 +62,44 @@ export default function SideNavigation({
     }
   };
 
-  const navigationItems: NavigationItem[] = [
+  const patientNavigationItems: NavigationItem[] = [
     {
       id: '1',
       title: 'Home',
       icon: 'home',
       iconLibrary: 'Feather',
-      route: './patientHome'
+      route: '../../../patientProfile/patientHome'
     },
     {
       id: '2',
-      title: 'Doctor Search',
+      title: 'Find a Doctor',
       icon: 'search',
       iconLibrary: 'Feather',
-      route: '../patientProfile/doctorSearch'
+      route: '../../../patientProfile/more/doctorSearch/doctorSearch'
     },
     {
       id: '3',
       title: 'Uploads',
       icon: 'upload',
       iconLibrary: 'Feather',
-      route: './uploads'
+      route: '../../../patientProfile/more/patientProfilee/uploads'
     },
     {
       id: '4',
-      title: 'Health Tips',
+      title: 'Wellness Hub',
       icon: 'heart',
       iconLibrary: 'AntDesign',
-      route: '../patientProfile/healthTips'
+      route: '../../../patientProfile/more/patientProfilee/healthtips'
     },
     {
       id: '5',
-      title: 'FAQs',
-      icon: 'message-circle',
+      title: 'Profile',
+      icon: 'user',
       iconLibrary: 'Feather',
-      route: './faqs'
+      route: '../../../patientProfile/more/patientProfilee/profilePage'
     },
     {
       id: '6',
-      title: 'About',
-      icon: 'info',
-      iconLibrary: 'Feather',
-      route: './about'
-    },
-    {
-      id: '7',
-      title: 'Settings',
-      icon: 'settings',
-      iconLibrary: 'Feather',
-      route: './settings'
-    },
-    {
-      id: '8',
       title: 'Logout',
       icon: 'log-out',
       iconLibrary: 'Feather',
@@ -119,6 +107,64 @@ export default function SideNavigation({
       isLogout: true
     }
   ];
+
+  // Doctor-specific reduced menu
+  const doctorNavigationItems: NavigationItem[] = [
+    {
+      id: '1',
+      title: 'Home',
+      icon: 'home',
+      iconLibrary: 'Feather',
+      route: '/doctorProfile/doctorHome'
+    },
+    {
+      id: '2',
+      title: 'Profile',
+      icon: 'user',
+      iconLibrary: 'Feather',
+      route: '/auth/Auth/createDocProfile'
+    },
+    {
+      id: '3',
+      title: 'Logout',
+      icon: 'log-out',
+      iconLibrary: 'Feather',
+      action: handleSignOut,
+      isLogout: true
+    }
+  ];
+
+  useEffect(() => {
+    const checkRole = async () => {
+      try {
+        const user = auth.currentUser;
+        if (!user || !user.uid) {
+          setIsDoctor(false);
+          return;
+        }
+        const roles = await AuthService.determineRoles(user.uid);
+        if (roles && roles.isDoctor) {
+          setIsDoctor(true);
+        } else {
+          setIsDoctor(false);
+        }
+      } catch (err) {
+        console.warn('Failed to determine roles for side nav:', err);
+        setIsDoctor(false);
+      }
+    };
+
+    checkRole();
+
+    // Listen for user changes and re-check role
+    if (global.EventEmitter) {
+      const handler = () => checkRole();
+      global.EventEmitter.on('USER_CHANGED', handler);
+      return () => global.EventEmitter.off('USER_CHANGED', handler);
+    }
+  }, []);
+
+  const navigationItems = isDoctor ? doctorNavigationItems : patientNavigationItems;
 
   const handleItemPress = (item: NavigationItem) => {
     if (item.action) {
@@ -199,24 +245,14 @@ export default function SideNavigation({
 
         <View style={styles.drawerContainer}>
           <SafeAreaView style={styles.safeArea}>
-            {/* Header */}
             <View style={styles.header}>
-              <View style={styles.logoContainer}>
-                <Image
-                  source={require('../../assets/images/logo.png')}
-                  style={styles.logoImage}
-                />
-              </View>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={onClose}
-              >
-                <Feather name="chevron-down" size={24} color="#666" />
+              <Text style={styles.headerTitle}>
+                {isDoctor ? 'Doctor Portal' : 'Menu'}
+              </Text>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <Feather name="x" size={24} color="#666" />
               </TouchableOpacity>
             </View>
-
-            {/* Divider */}
-            <View style={styles.headerDivider} />
 
             {/* Navigation Items */}
             <ScrollView

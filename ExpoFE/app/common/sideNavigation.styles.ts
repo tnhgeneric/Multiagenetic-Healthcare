@@ -30,11 +30,18 @@ export default StyleSheet.create({
   // Header Styles
   header: {
     flexDirection: 'row',
-    alignItems: 'flex-start', 
+    alignItems: 'center', 
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 12, 
-    marginBottom: -25, 
+    paddingVertical: 16, 
+    marginBottom: 10, 
+  },
+  
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333',
+    flex: 1,
   },
   
   logoContainer: {
