@@ -51,13 +51,14 @@ export default function HealthAnalytics() {
           // Extract health metrics from lab results
           const extractedMetrics: HealthMetric[] = [];
           reports.forEach(report => {
-            if (report.results && Array.isArray(report.results)) {
-              report.results.forEach((result: any) => {
+            if (report.results && typeof report.results === 'object') {
+              // Convert Record<string, string | number> to array of metrics
+              Object.entries(report.results).forEach(([name, value]) => {
                 extractedMetrics.push({
-                  name: result.name || 'Metric',
-                  value: result.value?.toString() || 'N/A',
-                  unit: result.unit || '',
-                  status: result.status === 'normal' ? 'good' : result.status === 'high' ? 'critical' : 'warning',
+                  name: name || 'Metric',
+                  value: String(value),
+                  unit: report.normalRange?.[name] || '',
+                  status: 'good',
                   trend: 'stable',
                 });
               });
@@ -204,7 +205,7 @@ export default function HealthAnalytics() {
                   </View>
                 </View>
                 <MaterialIcons
-                  name={getStatusIcon(metric.status)}
+                  name={getStatusIcon(metric.status) as any}
                   size={24}
                   color={getStatusColor(metric.status)}
                 />
