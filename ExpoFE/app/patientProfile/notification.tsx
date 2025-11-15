@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,13 @@ import {
   ScrollView,
   StatusBar,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from './notification.styles';
 import BottomNavigation from '../common/BottomNavigation';
+import { auth } from '../../config/firebaseConfig';
+import { getPatientTasks, getAllPatientTasks } from '../../services/firestoreService';
 
 interface TaskItem {
   id: string;
@@ -35,6 +38,8 @@ const CalendarTaskUI: React.FC<CalendarTaskUIProps> = () => {
   const [selectedDate, setSelectedDate] = useState<string>(
     currentDate.toISOString().split('T')[0]
   );
+  const [allTasks, setAllTasks] = useState<TaskItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -43,8 +48,8 @@ const CalendarTaskUI: React.FC<CalendarTaskUIProps> = () => {
 
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // Sample tasks for different dates
-  const allTasks: TaskItem[] = [
+  // Fallback sample tasks for demonstration
+  const sampleTasks: TaskItem[] = [
     {
       id: '1',
       title: 'Meeting',
@@ -105,6 +110,51 @@ const CalendarTaskUI: React.FC<CalendarTaskUIProps> = () => {
       date: '2024-11-15'
     }
   ];
+
+  // Load tasks from Firestore
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        setLoading(true);
+        const user = auth.currentUser;
+        
+        if (user?.uid) {
+          // Try to load from Firestore
+          const firestoreTasks = await getAllPatientTasks(user.uid);
+          
+          if (firestoreTasks && firestoreTasks.length > 0) {
+            // Convert Firestore tasks to TaskItem format
+            const convertedTasks = firestoreTasks.map(task => ({
+              id: task.id,
+              title: task.title,
+              time: task.time,
+              subtitle: task.subtitle || '',
+              type: task.type as 'meeting' | 'task',
+              avatars: task.avatars,
+              date: task.date,
+            }));
+            setAllTasks(convertedTasks);
+            console.log(`Loaded ${convertedTasks.length} tasks from Firestore`);
+          } else {
+            // Fallback to sample data if no Firestore data
+            setAllTasks(sampleTasks);
+            console.log('No Firestore tasks found, using sample data');
+          }
+        } else {
+          // No user logged in, use sample data
+          setAllTasks(sampleTasks);
+        }
+      } catch (error) {
+        console.warn('Error loading tasks from Firestore, using sample data:', error);
+        // Fallback to sample data on error
+        setAllTasks(sampleTasks);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTasks();
+  }, []);
 
   // Generate calendar days for current month
   const generateCalendarDays = (): CalendarDay[] => {
@@ -205,18 +255,25 @@ const CalendarTaskUI: React.FC<CalendarTaskUIProps> = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.dateText}>
-          {formattedSelectedDate}
-        </Text>
-        <Text style={styles.todayLabel}>Today</Text>
-        <TouchableOpacity style={styles.profileButton}>
-          <View style={styles.profileImage}>
-            <Text style={styles.profileText}>👤</Text>
+      {loading ? (
+        <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color="#8B5CF6" />
+          <Text style={{ marginTop: 10, color: '#64748B' }}>Loading your tasks...</Text>
+        </View>
+      ) : (
+        <>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.dateText}>
+              {formattedSelectedDate}
+            </Text>
+            <Text style={styles.todayLabel}>Today</Text>
+            <TouchableOpacity style={styles.profileButton}>
+              <View style={styles.profileImage}>
+                <Text style={styles.profileText}>👤</Text>
+              </View>
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
-      </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Horizontal Calendar */}
@@ -242,8 +299,10 @@ const CalendarTaskUI: React.FC<CalendarTaskUIProps> = () => {
         </View>
       </ScrollView>
 
-       {/* Bottom Navigation */}
-      <BottomNavigation activeTab="notification" />
+           {/* Bottom Navigation */}
+        <BottomNavigation activeTab="notification" />
+        </>
+      )}
     </SafeAreaView>
   );
 };
