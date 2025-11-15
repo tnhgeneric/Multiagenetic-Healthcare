@@ -1,47 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Feather,} from '@expo/vector-icons';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { auth } from '../../config/firebaseConfig';
+import AuthService from '../../services/authService';
 import SideNavigationDrawer from './sideNavigation';
 
-type RootStackParamList = {
-  Home: undefined;
-  Statistics: undefined;
-  Notifications: undefined;
-  More: undefined;
-  PatientHome: undefined;
-  NotificationScreen: undefined;
-};
-
 interface BottomNavigationProps {
-  activeTab: 'home' | 'statistics' | 'notification' | 'more' | 'none';
+  activeTab: 'home' | 'notification' | 'chat' | 'more' | 'none';
   onTabPress?: (tabName: string) => void;
 }
 
-export default function BottomNavigation({ 
-  activeTab, 
-  onTabPress = () => {} 
+export default function BottomNavigation({
+  activeTab,
+  onTabPress = () => { }
 }: BottomNavigationProps) {
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const router = useRouter();
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
+  const [isDoctor, setIsDoctor] = useState<boolean>(false);
 
-   const handleTabPress = (tabName: string) => {
-    // Call the optional onTabPress callback
+
+  // Only highlight tab if on these pages
+  const highlightTabs = ['home', 'notification', 'chat', 'more'];
+  const shouldHighlight = highlightTabs.includes(activeTab);
+
+  const handleTabPress = (tabName: string) => {
     onTabPress(tabName);
-    
-    // Handle navigation based on tab
     switch (tabName) {
       case 'home':
-        navigation.navigate('Home'); 
+        if (isDoctor) {
+          router.push('/doctorProfile/doctorHome');
+        } else {
+          router.push('../../../patientProfile/patientHome');
+        }
         break;
-      case 'statistics':
-        navigation.navigate('Statistics'); 
-        break;
+
       case 'notification':
-        navigation.navigate('Notifications'); 
+        if (isDoctor) {
+          router.push('/doctorProfile/docnotification');
+        } else {
+          router.push('../../../patientProfile/notification');
+        }
         break;
+
+      case 'chat':
+        if (isDoctor) {
+          router.push('/doctorProfile/docChatbot');
+        } else {
+          router.push('../../../patientProfile/chat');
+        }
+        break;
+
       case 'more':
-        // Toggle side navigation drawer instead of navigating
         setIsDrawerVisible(true);
         break;
       default:
@@ -49,81 +59,101 @@ export default function BottomNavigation({
     }
   };
 
+  useEffect(() => {
+    const checkRole = async () => {
+      try {
+        const user = auth.currentUser;
+        if (!user || !user.uid) {
+          setIsDoctor(false);
+          return;
+        }
+        const roles = await AuthService.determineRoles(user.uid);
+        setIsDoctor(!!(roles && roles.isDoctor));
+      } catch (err) {
+        console.warn('Failed to determine roles for bottom nav:', err);
+        setIsDoctor(false);
+      }
+    };
+
+    checkRole();
+
+    // Listen for user changes and re-check role
+    if (global.EventEmitter) {
+      const handler = () => checkRole();
+      global.EventEmitter.on('USER_CHANGED', handler);
+      return () => global.EventEmitter.off('USER_CHANGED', handler);
+    }
+  }, []);
+
   return (
     <>
       <SideNavigationDrawer
         isVisible={isDrawerVisible}
         onClose={() => setIsDrawerVisible(false)}
       />
-      
+
       <View style={styles.container}>
-      
-      <TouchableOpacity 
-        style={styles.tabButton} 
-        onPress={() => handleTabPress('home')}
-      >
-        {/* <View style={[
-          styles.tabIconContainer,
-          activeTab === 'home' && styles.activeTabIconContainer
-        ]}> */}
-        
-          <Feather 
-            name="home" 
-            size={22} 
-            color={activeTab === 'home' ? '#7d4c9e' : '#666'} 
+
+        <TouchableOpacity
+          style={styles.tabButton}
+          onPress={() => handleTabPress('home')}
+        >
+          <Feather
+            name="home"
+            size={22}
+            color={shouldHighlight && activeTab === 'home' ? '#7d4c9e' : '#666'}
           />
-        {/* </View> */}
-        <Text style={[
-          styles.tabLabel,
-          activeTab === 'home' && styles.activeTabLabel
-        ]}>Home</Text>
-      </TouchableOpacity>
+          <Text style={[
+            styles.tabLabel,
+            shouldHighlight && activeTab === 'home' && styles.activeTabLabel
+          ]}>Home</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.tabButton} 
-        onPress={() => handleTabPress('statistics')}
-      >
-        <Feather 
-          name="bar-chart-2" 
-          size={22} 
-          color={activeTab === 'statistics' ? '#7d4c9e' : '#666'} 
-        />
-        <Text style={[
-          styles.tabLabel,
-          activeTab === 'statistics' && styles.activeTabLabel
-        ]}>Statistics</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.tabButton}
+          onPress={() => handleTabPress('notification')}
+        >
+          <Feather
+            name="bell"
+            size={22}
+            color={shouldHighlight && activeTab === 'notification' ? '#7d4c9e' : '#666'}
+          />
+          <Text style={[
+            styles.tabLabel,
+            shouldHighlight && activeTab === 'notification' && styles.activeTabLabel
+          ]}>Alerts</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.tabButton} 
-        onPress={() => handleTabPress('notification')}
-      >
-        <Feather 
-          name="bell" 
-          size={22} 
-          color={activeTab === 'notification' ? '#7d4c9e' : '#666'} 
-        />
-        <Text style={[
-          styles.tabLabel,
-          activeTab === 'notification' && styles.activeTabLabel
-        ]}>Notification</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.tabButton}
+          onPress={() => handleTabPress('chat')}
+        >
+          <Feather
+            name="message-circle"
+            size={22}
+            color={shouldHighlight && activeTab === 'chat' ? '#7d4c9e' : '#666'}
+          />
+          <Text style={[
+            styles.tabLabel,
+            shouldHighlight && activeTab === 'chat' && styles.activeTabLabel
+          ]}>Chat</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.tabButton} 
-        onPress={() => handleTabPress('more')}
-      >
-        <Feather 
-          name="menu" 
-          size={22} 
-          color={activeTab === 'more' ? '#7d4c9e' : '#666'} 
-        />
-        <Text style={[
-          styles.tabLabel,
-          activeTab === 'more' && styles.activeTabLabel
-        ]}>More</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          style={styles.tabButton}
+          onPress={() => handleTabPress('more')}
+        >
+          <Feather
+            name="menu"
+            size={22}
+            color={shouldHighlight && activeTab === 'more' ? '#7d4c9e' : '#666'}
+          />
+          <Text style={[
+            styles.tabLabel,
+            shouldHighlight && activeTab === 'more' && styles.activeTabLabel
+          ]}>More</Text>
+        </TouchableOpacity>
+      </View>
     </>
   );
 }

@@ -372,6 +372,40 @@ class AuthService {
       return { success: false, error: errorMessage };
     }
   }
+
+  // Determine user roles by checking Firestore collections
+  // Returns { isDoctor: true } if user in Doctor collection
+  // Returns { isDoctor: false } if user in Patient collection only
+  // Returns { isDoctor: false, isPatient: false } if user not found
+  async determineRoles(uid: string): Promise<{ isDoctor: boolean; isPatient?: boolean }> {
+    try {
+      if (!uid) {
+        console.warn('determineRoles: No UID provided');
+        return { isDoctor: false, isPatient: false };
+      }
+
+      // Check Doctor collection first
+      const doctorDoc = await db.collection('Doctor').doc(uid).get();
+      if (doctorDoc.exists) {
+        console.log(`determineRoles: User ${uid} is a Doctor`);
+        return { isDoctor: true, isPatient: false };
+      }
+
+      // Check Patient collection
+      const patientDoc = await db.collection('Patient').doc(uid).get();
+      if (patientDoc.exists) {
+        console.log(`determineRoles: User ${uid} is a Patient`);
+        return { isDoctor: false, isPatient: true };
+      }
+
+      // User not found in either collection
+      console.warn(`determineRoles: User ${uid} not found in Doctor or Patient collections`);
+      return { isDoctor: false, isPatient: false };
+    } catch (error: any) {
+      console.error('determineRoles: Error determining user roles:', error);
+      return { isDoctor: false, isPatient: false };
+    }
+  }
 }
 
 export default new AuthService();
