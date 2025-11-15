@@ -1,0 +1,8 @@
+.\.venv\Scripts\Activate.ps1
+
+uvicorn services.prompt_processor:app --host 0.0.0.0 --port 8000 --reload
+ uvicorn orchestration_agent.main:app --host 0.0.0.0 --port 8001 --reload
+ uvicorn agents.disease_prediction.main:app --host 0.0.0.0 --port 8002 --reload
+uvicorn agents.symptom_analyzer.main:app --host 0.0.0.0 --port 8003 --reload
+uvicorn services.fhir_demo_server:app --host 0.0.0.0 --port 8004 --reload
+uvicorn agents.patient_journey.main:app --host 0.0.0.0 --port 8005 --reload 

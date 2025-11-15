@@ -27,11 +27,17 @@ class MCPACLPrompt(BaseModel):
     symptoms: List[str]
 
 class DiseasePredictionRequest(BaseModel):
-    symptoms: List[str]
+    symptoms: Optional[List[str]] = None
+    patient_id: Optional[str] = None
+    severity_level: Optional[str] = "medium"
+    semantic_context: Optional[dict] = None
 
 class DiseasePredictionResult(BaseModel):
     predicted_diseases: List[str]
     confidence: float
+    symptoms_used: List[str]
+    severity_level: str
+    patient_id: Optional[str] = None  # Add patient ID to result
 
 class DiseasePredictionResponse(BaseModel):
     result: Optional[DiseasePredictionResult] = None
@@ -48,25 +54,69 @@ if VertexAI and GOOGLE_CLOUD_PROJECT:
     )
 
 
+from sub_agents.domain_logic import DomainLogic
+
+domain_logic = DomainLogic()
+
 @app.post("/predict_disease", response_model=DiseasePredictionResponse)
 def predict_disease(request: DiseasePredictionRequest):
-    if not vertex_llm:
-        return DiseasePredictionResponse(error="VertexAI or API keys not configured. Please install langchain-google-vertexai and set environment variables.")
     try:
-        # Build a clear prompt for the medical diagnosis
-        prompt = f"""You are a medical AI assistant. Based on the following symptoms, analyze and predict possible diseases:
+        print(f"Disease prediction request: {request}")
+        
+        # Forward the request to domain logic
+        result = domain_logic.predict_disease({
+            'patient_id': request.patient_id,
+            'symptoms': request.symptoms or [],
+            'severity_level': request.severity_level,
+            'semantic_context': request.semantic_context
+        })
+        
+        print(f"Domain logic result: {result}")
+        
+        if not result.get('predicted_diseases'):
+            return DiseasePredictionResponse(error="No predictions available")
+            
+        # Convert to response model
+        prediction_result = DiseasePredictionResult(
+            predicted_diseases=result['predicted_diseases'],
+            confidence=result['confidence'],
+            symptoms_used=result['symptoms_used'],
+            severity_level=result['severity_level'],
+            patient_id=request.patient_id  # Include patient ID in response
+        )
+        
+        print(f"Returning prediction: {prediction_result}")
+        return DiseasePredictionResponse(result=prediction_result)
+        
+    except Exception as e:
+        import traceback
+        error_details = f"Error in disease prediction: {str(e)}\n{traceback.format_exc()}"
+        print(error_details)
+        return DiseasePredictionResponse(error=error_details)
 
-Symptoms:
-{', '.join(request.symptoms)}
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
 
-Please provide your response in this format:
-{{
-    "predicted_diseases": ["Disease1", "Disease2", ...],
-    "confidence": 0.XX,
+# Response format template
+RESPONSE_TEMPLATE = """{
+    "predicted_diseases": ["Disease1", "Disease2"],
+    "confidence": 0.85,
     "explanation": "Brief explanation of the predictions",
     "severity": "low/medium/high",
     "recommendation": "Brief medical recommendation"
-}}"""
+}"""
+
+@app.post("/llm_predict", response_model=DiseasePredictionResponse)
+async def llm_predict(request: DiseasePredictionRequest):
+    try:
+        if not vertex_llm:
+            return DiseasePredictionResponse(error="Vertex AI LLM not initialized")
+
+        # Prepare prompt with symptoms
+        prompt = f"Based on the following symptoms: {', '.join(request.symptoms or [])}\n"
+        prompt += "Please provide a disease prediction in this format:\n"
+        prompt += RESPONSE_TEMPLATE
 
         # Send to Gemini-Pro LLM
         llm_response = vertex_llm(prompt)
@@ -93,7 +143,9 @@ Please provide your response in this format:
 
         result = DiseasePredictionResult(
             predicted_diseases=diseases,
-            confidence=confidence
+            confidence=confidence,
+            symptoms_used=request.symptoms or [],
+            severity_level=request.severity_level or "medium"
         )
         return DiseasePredictionResponse(result=result)
     except Exception as e:

@@ -1,14 +1,23 @@
-
 import os
-from fastapi import FastAPI, HTTPException
+import requests
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from typing import Dict, Any
+import traceback
+import logging
 
 from orchestration.input_handler import InputHandler
 from orchestration.task_planner import TaskPlanner
 from orchestration.agent_dispatcher import AgentDispatcher
 from services.enrichment_service import EnrichmentService
 from services.llm_service import LLMService
+
+# Initialize logger
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(title="Orchestration Agent API")
@@ -62,25 +71,86 @@ agent_dispatcher = AgentDispatcher()
 class MCPACLInput(BaseModel):
     mcp_acl: Dict[str, Any]
 
+class ChatRequest(BaseModel):
+    prompt: str
+    user_id: str
+    session_id: str
+    workflow: str
+    get_status: bool = False
+    is_retry: bool = False
+
+# Store results in memory (replace with proper storage in production)
+session_results = {}
+
 @app.post("/orchestrate")
-async def orchestrate(input_data: MCPACLInput):
+async def orchestrate(request: ChatRequest):
     """
-    Receives pre-enriched MCP/ACL JSON and orchestrates the execution.
-    The enrichment and LLM processing should happen before this endpoint.
+    Handles both initial requests and status checks for ongoing processes.
     """
     try:
-        # Step 1: Validate MCP/ACL structure
-        if not input_handler.validate(input_data.mcp_acl):
+        # Check if this is a status request
+        if request.get_status or request.is_retry:
+            logger.info(f"Status check for session {request.session_id}")
+            if request.session_id in session_results:
+                results = session_results[request.session_id]
+                logger.info(f"Found results for session {request.session_id}: {results}")
+                return {
+                    "status": "success",
+                    "results": results
+                }
+            else:
+                logger.info(f"No results yet for session {request.session_id}")
+                return {
+                    "status": "processing",
+                    "mcp_acl": {
+                        "agents": ["symptom_analyzer", "disease_prediction"],
+                        "actions": [
+                            {"agent": "symptom_analyzer", "action": "analyze_symptoms"},
+                            {"agent": "disease_prediction", "action": "predict_disease"}
+                        ]
+                    }
+                }
+
+        # Call prompt processor to get MCP/ACL structure
+        prompt_payload = {
+            "prompt": request.prompt,
+            "user_id": request.user_id,
+            "session_id": request.session_id,
+            "workflow": request.workflow
+        }
+        
+        try:
+            prompt_response = requests.post(
+                "http://127.0.0.1:8000/process_prompt",
+                json=prompt_payload
+            )
+            if prompt_response.status_code != 200:
+                raise HTTPException(
+                    status_code=prompt_response.status_code,
+                    detail=f"Prompt Processor Error: {prompt_response.text}"
+                )
+            
+            mcp_acl = prompt_response.json().get("mcp_acl")
+            if not mcp_acl:
+                raise HTTPException(
+                    status_code=400,
+                    detail="No MCP/ACL structure returned from prompt processor"
+                )
+        except requests.RequestException as e:
+            raise HTTPException(
+                status_code=503,
+                detail=f"Error communicating with prompt processor: {str(e)}"
+            )
+
+        if not input_handler.validate(mcp_acl):
             raise HTTPException(status_code=400, detail="Invalid MCP/ACL structure")
 
-        # Step 2: Extract execution plan
-        plan = input_handler.extract_plan(input_data.mcp_acl)
-        
-        # Step 3: Sequence tasks
+        plan = input_handler.extract_plan(mcp_acl)
         sequenced_tasks = task_planner.sequence_tasks(plan)
-        
-        # Step 4: Dispatch tasks to sub-agents
         results = agent_dispatcher.dispatch(sequenced_tasks)
+        
+        # Store results for this session
+        session_results[request.session_id] = results
         
         return {
             "status": "success",
@@ -89,43 +159,9 @@ async def orchestrate(input_data: MCPACLInput):
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
+        logger.error(f"Orchestration error: {str(e)}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Orchestration error: {str(e)}")
-    # Step 2: Validate MCP/ACL JSON
-    if not input_handler.validate(mcp_acl_json):
-        return {"error": "Invalid MCP/ACL structure from LLM"}
-
-    # Step 3: Extract plan/actions
-    plan = input_handler.extract_plan(mcp_acl_json)
-
-    # Step 4: Sequence and enrich tasks
-    sequenced_tasks = task_planner.sequence_tasks(plan)
-
-    # Step 5: Dispatch tasks to sub-agents
-    dispatch_results = agent_dispatcher.dispatch(sequenced_tasks)
-
-    # Step 6: Return dispatch results
-    return {"dispatch_results": dispatch_results}
-
-
-
-@app.post("/orchestrate")
-def orchestrate(mcp_acl_json: dict):
-    """Main orchestration endpoint."""
-    # Step 1: Validate MCP/ACL JSON
-    if not input_handler.validate(mcp_acl_json):
-        return {"error": "Invalid MCP/ACL structure"}
-
-    # Step 2: Extract plan/actions
-    plan = input_handler.extract_plan(mcp_acl_json)
-
-    # Step 3: Sequence and enrich tasks
-    sequenced_tasks = task_planner.sequence_tasks(plan)
-
-    # Step 4: Dispatch tasks to sub-agents
-    dispatch_results = agent_dispatcher.dispatch(sequenced_tasks)
-
-    # Step 5: Return dispatch results
-    return {"dispatch_results": dispatch_results}
 
 class DiseasePredictionRequest(BaseModel):
     symptoms: list[str]
@@ -163,3 +199,54 @@ def predict_disease(request: DiseasePredictionRequest):
         return {"error": "No prediction results"}
     except Exception as e:
         return {"error": str(e)}
+
+@app.post("/orchestrate_with_prompt")
+async def orchestrate_with_prompt(request: Request):
+    """
+    New endpoint to integrate the prompt_processor service for MCP/ACL generation.
+    """
+    try:
+        # Step 1: Receive raw prompt from the request
+        input_data = await request.json()
+        prompt_payload = {
+            "prompt": input_data.get("prompt"),
+            "user_id": input_data.get("user_id"),
+            "session_id": input_data.get("session_id"),
+            "workflow": input_data.get("workflow")
+        }
+
+        # Step 2: Call the prompt_processor service
+        import httpx
+        async with httpx.AsyncClient() as client:
+            response = await client.post("http://127.0.0.1:8000/process_prompt", json=prompt_payload)
+            if response.status_code != 200:
+                raise HTTPException(status_code=response.status_code, detail=f"Prompt Processor Error: {response.text}")
+
+            mcp_acl = response.json().get("mcp_acl")
+
+        # Step 3: Validate MCP/ACL structure
+        if not input_handler.validate(mcp_acl):
+            raise HTTPException(status_code=400, detail="Invalid MCP/ACL structure from Prompt Processor")
+
+        # Step 4: Extract execution plan
+        plan = input_handler.extract_plan(mcp_acl)
+
+        # Step 5: Sequence tasks
+        sequenced_tasks = task_planner.sequence_tasks(plan)
+
+        # Step 6: Dispatch tasks to sub-agents
+        dispatch_results = agent_dispatcher.dispatch(sequenced_tasks)
+
+        # Step 7: Return results
+        return {
+            "status": "success",
+            "dispatch_results": dispatch_results
+        }
+
+    except HTTPException as http_exc:
+        logger.error(f"HTTP Exception: {http_exc.detail}")
+        raise
+    except Exception as e:
+        logger.error(f"Unhandled Exception: {str(e)}")
+        logger.debug(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Orchestration error: {str(e)}")

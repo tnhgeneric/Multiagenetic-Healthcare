@@ -25,7 +25,7 @@ function debuggerHostBackend(): string | undefined {
     if (dbg && typeof dbg === 'string') {
       const host = dbg.split(':')[0];
       if (host && host !== 'localhost' && host !== '127.0.0.1') {
-        return `http://${host}:8001`;
+        return `http://${host}:8000`;  // Updated to use prompt processor port
       }
     }
   } catch (e) {
@@ -35,7 +35,7 @@ function debuggerHostBackend(): string | undefined {
 }
 
 // Always use the configured backend URL from app.json or env, fall back to LAN IP
-const resolvedUrl = envBackendUrl() || 'http://192.168.1.25:8001';
+const resolvedUrl = envBackendUrl() || 'http://192.168.1.25:8000';  // Updated to use prompt processor port
 console.log('[Backend Config] Resolved backend URL:', resolvedUrl);
 console.log('[Backend Config] Source:', envBackendUrl() ? 'app.config/env' : 'default fallback');
 export const BACKEND_BASE_URL: string = resolvedUrl;

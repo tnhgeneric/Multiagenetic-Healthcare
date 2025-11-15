@@ -1,0 +1,50 @@
+› Metro waiting on exp://192.168.1.25:8081
+› Scan the QR code above with Expo Go (Android) or the Camera app (iOS)
+
+ app.json
+ "newArchEnabled": true,
+    "experiments": {
+      "tsconfigPaths": true
+    },
+    "packagerOpts": {
+      "https": false
+    },
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+
+app.config.js
+module.exports = {
+  expo: {
+    extra: {
+      useHttp: true,
+    },
+    ios: {
+      bundleIdentifier: "com.extgo.app"
+    },
+    android: {
+      package: "com.extgo.app"
+
+--------------------------
+
+Builds for @agentich/ExpoFE:
+
+ID                       058fb84c-fa24-402e-8174-247860a99b5f
+Platform                 Android
+Status                   finished
+Profile                  preview
+Distribution             internal
+SDK Version              49.0.0
+Version                  1.0.0
+Version code             1
+Commit                   053da9064235075039251f4d45b2e91b16188156
+Logs                     https://expo.dev/accounts/agentich/projects/ExpoFE/builds/058fb84c-fa24-402e-8174-247860a99b5f
+Application Archive URL  https://expo.dev/artifacts/eas/FQdpFJFYLuCmKoo2ELL4z.apk
+Build Artifacts URL      null
+Fingerprint              not found
+Started at               11/5/2025, 11:14:32 PM
+Finished at              11/5/2025, 11:43:05 PM
+Started by               agentich
+√ Load more builds? ... no
+PS E:\ITTrends\Multiagenetic-Healthcare\ExpoFE> 
+

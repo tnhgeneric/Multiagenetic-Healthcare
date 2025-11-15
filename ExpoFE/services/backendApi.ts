@@ -19,8 +19,21 @@ const axiosRetry = async (error: AxiosError) => {
   return axios(config);
 };
 
+// Create API instance for prompt processor (8000)
 const api: AxiosInstance = axios.create({
-  baseURL: BACKEND_BASE_URL,
+  baseURL: BACKEND_BASE_URL, // Points to Prompt Processor (8000)
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  },
+  maxContentLength: Infinity,
+  maxBodyLength: Infinity
+});
+
+// Create a second instance for orchestration agent calls (8001)
+const orchestrationApi: AxiosInstance = axios.create({
+  baseURL: BACKEND_BASE_URL.replace(':8000', ':8001'), // Points to Orchestration Agent (8001)
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -71,7 +84,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Types for requests/responses (lightweight)
+// Types for requests/responses
 export interface PatientJourneyRequest {
   symptoms: string[];
 }
@@ -96,6 +109,93 @@ export interface DiseasePredictionResponse {
   error?: string;
 }
 
+export interface ChatRequest {
+  prompt: string;
+  user_id?: string;
+  session_id?: string;
+  workflow?: string;
+  get_status?: boolean;
+  is_retry?: boolean;
+}
+
+export interface AgentResult {
+  agent: string;
+  result: {
+    identified_symptoms?: string[];
+    severity_level?: string;
+    predicted_diseases?: string[];
+    confidence?: number;
+    [key: string]: any;
+  };
+}
+
+export interface ChatResponse {
+  status: string;
+  results?: AgentResult[];
+  error?: string;
+  mcp_acl?: {
+    agents: string[];
+    workflow: string;
+    actions: Array<{
+      agent: string;
+      action: string;
+      params: Record<string, any>;
+    }>;
+    data_flow: Array<{
+      from: string;
+      to: string;
+      data: string;
+    }>;
+  };
+}
+
+/**
+ * Handles the complete chat flow:
+ * 1. Sends message to prompt processor (8000) for enrichment
+ * 2. Gets results from orchestration agent (8001)
+ */
+export async function callChatOrchestrate(payload: ChatRequest): Promise<ChatResponse> {
+  try {
+    const defaultedPayload = {
+      prompt: payload.prompt,
+      user_id: payload.user_id || 'current_user',
+      session_id: payload.session_id || `session_${Date.now()}`,
+      workflow: payload.workflow || 'medical_diagnosis',
+      get_status: payload.get_status || false,
+      is_retry: payload.is_retry || false
+    };
+
+    if (payload.get_status || payload.is_retry) {
+      // For status checks and retries, go directly to orchestration agent
+      const resp = await orchestrationApi.post<ChatResponse>('/orchestrate', defaultedPayload);
+      return resp.data;
+    }
+
+    // For new requests:
+    // 1. Send to prompt processor for enrichment
+    const enrichedResp = await api.post<{ mcp_acl: any }>('/process_prompt', defaultedPayload);
+    console.log('Enriched response:', enrichedResp.data);
+
+    if (!enrichedResp.data.mcp_acl) {
+      throw new Error('Prompt processor did not return MCP/ACL structure');
+    }
+
+    // 2. Send enriched MCP/ACL to orchestration agent
+    const orchestrationResp = await orchestrationApi.post<ChatResponse>('/orchestrate', {
+      ...defaultedPayload,
+      mcp_acl: enrichedResp.data.mcp_acl
+    });
+
+    return orchestrationResp.data;
+  } catch (error) {
+    console.error('Error in chat orchestration:', error);
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.detail || error.message);
+    }
+    throw error;
+  }
+}
+
 export async function callPatientJourney(payload: PatientJourneyRequest): Promise<PatientJourneyResponse> {
   const resp = await api.post<PatientJourneyResponse>('/patient_journey', payload);
   return resp.data;
@@ -103,49 +203,6 @@ export async function callPatientJourney(payload: PatientJourneyRequest): Promis
 
 export async function callPredictDisease(payload: DiseasePredictionRequest): Promise<DiseasePredictionResponse> {
   const resp = await api.post<DiseasePredictionResponse>('/predict_disease', payload);
-  return resp.data;
-}
-
-export async function callOrchestrate(mcpAclJson: any): Promise<any> {
-  const resp = await api.post('/orchestrate', mcpAclJson);
-  return resp.data;
-}
-
-export async function callChatOrchestrate(payload: { prompt: string; user_id: string; session_id: string; workflow: string; }) {
-  // Log the full URL we're trying to access
-  console.log('Attempting to connect to:', `${BACKEND_BASE_URL}/orchestrate`);
-  
-  // Convert chat payload to MCP format
-  const mcpPayload = {
-    mcp_acl: {
-      agents: ["symptom_analyzer", "disease_prediction"],
-      workflow: "medical_diagnosis",
-      actions: [
-        {
-          agent: "symptom_analyzer",
-          action: "analyze_symptoms",
-          params: {
-            symptoms_text: payload.prompt
-          }
-        },
-        {
-          agent: "disease_prediction",
-          action: "predict_disease",
-          params: {
-            symptoms: []  // Will be populated from symptom analyzer's output
-          }
-        }
-      ],
-      data_flow: [
-        {
-          from: "symptom_analyzer",
-          to: "disease_prediction",
-          data: "structured_symptoms"
-        }
-      ]
-    }
-  };
-  const resp = await api.post('/orchestrate', mcpPayload);
   return resp.data;
 }
 

@@ -1,17 +1,26 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from collections import defaultdict
+import logging
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 class TaskPlanner:
     """
-    Breaks down the plan into actionable tasks and determines dependencies.
+    Plans and sequences tasks with semantic understanding.
+    Handles dependencies and optimizes task execution based on semantic context.
     """
     def sequence_tasks(self, plan: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        Analyzes task dependencies and creates a properly sequenced execution plan.
+        Creates a semantically-aware execution plan with proper task sequencing.
+        Considers semantic priorities and dependencies.
         """
         # Build dependency graph
         depends_on = defaultdict(list)
         provides_data = {}
+        
+        # Track semantic priorities
+        priority_tasks = defaultdict(list)  # high, medium, low priorities
         
         # First pass: identify data providers
         for task in plan:
@@ -49,13 +58,28 @@ class TaskPlanner:
             visited.add(task_id)
             for task in plan:
                 if f"{task['agent']}_{task['action']}" == task_id:
-                    sequenced.append(task)
+                    # Consider semantic priority when sequencing
+                    priority = task.get('priority', 'medium')
+                    priority_tasks[priority].append(task)
                     break
 
-        # Process all tasks
+        # Process all tasks considering priorities
         for task in plan:
             task_id = f"{task['agent']}_{task['action']}"
             if task_id not in visited:
                 visit(task_id)
 
-        return sequenced
+        # Combine tasks based on priority while maintaining dependencies
+        final_sequence = []
+        for priority in ['high', 'medium', 'low']:
+            priority_group = priority_tasks[priority]
+            final_sequence.extend(sorted(
+                priority_group,
+                key=lambda x: len(depends_on[f"{x['agent']}_{x['action']}"])
+            ))
+            
+        logger.info(f"Planned sequence with {len(final_sequence)} tasks")
+        for task in final_sequence:
+            logger.debug(f"Task: {task['agent']}_{task['action']} Priority: {task.get('priority', 'medium')}")
+
+        return final_sequence

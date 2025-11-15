@@ -226,6 +226,7 @@ New-NetFirewallRule -DisplayName "Allow Python FastAPI 8000" -Direction Inbound 
 New-NetFirewallRule -DisplayName "Allow Python FastAPI 8001" -Direction Inbound -LocalPort 8001 -Protocol TCP -Action Allow
 New-NetFirewallRule -DisplayName "Allow Python FastAPI 8002" -Direction Inbound -LocalPort 8002 -Protocol TCP -Action Allow
 New-NetFirewallRule -DisplayName "Allow Python FastAPI 8003" -Direction Inbound -LocalPort 8003 -Protocol TCP -Action Allow
+New-NetFirewallRule -DisplayName "Allow Python FastAPI 8005" -Direction Inbound -LocalPort 8005 -Protocol TCP -Action Allow
 ```
 
 ## 4. Starting the Services
@@ -356,6 +357,7 @@ Verify Vertex AI connection:
 - Port 8001: Orchestration Agent (Main API endpoint)
 - Port 8002: Disease Prediction Service
 - Port 8003: Symptom Analyzer Service
+- Port 8005: Patient Journey Agent
 
 Note: The LLM service runs on Google Vertex AI and does not require a local port.
 
