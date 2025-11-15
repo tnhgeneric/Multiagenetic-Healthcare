@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,12 +7,19 @@ import {
   SafeAreaView,
   ScrollView,
   FlatList,
-  Image
+  Image,
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { Feather, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import styles from './labresults.styles';
 import BottomNavigation from '../common/BottomNavigation';
+import { auth } from '../../config/firebaseConfig';
+import {
+  getRecentLabReports,
+  LabReport,
+} from '../../services/firestoreService';
 
 interface LabResult {
   name: string;
@@ -21,27 +28,30 @@ interface LabResult {
   status: 'normal' | 'high' | 'low';
 }
 
-interface LabReport {
+interface LabReportDisplay {
   id: string;
   name: string;
   results: LabResult[];
   pdfUrl?: string;
   imageUrl?: string;
   type: 'pdf' | 'image';
+  testDate?: string;
 }
 
 interface DateGroup {
   date: string;
-  reports: LabReport[];
+  reports: LabReportDisplay[];
 }
 
 export default function LabReports() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'results' | 'trends'>('results');
+  const [loading, setLoading] = useState(true);
+  const [labData, setLabData] = useState<DateGroup[]>([]);
 
-  // Sample data grouped by date
-  const labData: DateGroup[] = [
+  // Sample data fallback
+  const sampleLabData: DateGroup[] = [
     {
       date: '04 April 2025',
       reports: [
@@ -73,46 +83,69 @@ export default function LabReports() {
           imageUrl: 'sample-glucose-report.jpg'
         }
       ]
-    },
-    {
-      date: '04 March 2025',
-      reports: [
-        {
-          id: '4',
-          name: 'Creatinine',
-          results: [
-            { name: 'Creatinine', value: 0.83, unit: 'mg/dL', status: 'normal' }
-          ],
-          type: 'pdf',
-          pdfUrl: 'sample-creatinine-march.pdf'
-        },
-        {
-          id: '5',
-          name: 'TSH',
-          results: [
-            { name: 'TSH', value: 1.385, unit: 'mIU/L', status: 'normal' }
-          ],
-          type: 'pdf',
-          pdfUrl: 'sample-tsh-march.pdf'
-        },
-        {
-          id: '6',
-          name: 'Fasting Glucose',
-          results: [
-            { name: 'Fasting Glucose', value: 89.60, unit: 'mg/dL', status: 'normal' }
-          ],
-          type: 'image',
-          imageUrl: 'sample-glucose-march.jpg'
-        }
-      ]
     }
   ];
+
+  useEffect(() => {
+    loadLabReports();
+  }, []);
+
+  const loadLabReports = async () => {
+    try {
+      setLoading(true);
+      const user = auth.currentUser;
+      if (user?.uid) {
+        const reports = await getRecentLabReports(user.uid, 50);
+        if (reports && reports.length > 0) {
+          // Group by date
+          const grouped = groupByDate(reports);
+          setLabData(grouped);
+        } else {
+          setLabData(sampleLabData);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading lab reports:', error);
+      setLabData(sampleLabData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const groupByDate = (reports: LabReport[]): DateGroup[] => {
+    const grouped: Record<string, LabReportDisplay[]> = {};
+    
+    reports.forEach(report => {
+      const dateStr = report.testDate ? new Date(report.testDate).toLocaleDateString() : 'Unknown Date';
+      if (!grouped[dateStr]) {
+        grouped[dateStr] = [];
+      }
+      
+      // Convert Firestore format to display format
+      const displayReport: LabReportDisplay = {
+        id: report.id || '',
+        name: report.testType || 'Lab Report',
+        results: report.results || [],
+        pdfUrl: report.pdfUrl,
+        imageUrl: report.imageUrl,
+        type: (report.pdfUrl ? 'pdf' : 'image') as 'pdf' | 'image',
+        testDate: report.testDate,
+      };
+      
+      grouped[dateStr].push(displayReport);
+    });
+
+    return Object.entries(grouped).map(([date, reports]) => ({
+      date,
+      reports,
+    })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  };
 
   const handleBack = () => {
     router.back();
   };
 
-  const handleLabReportPress = (report: LabReport) => {
+  const handleLabReportPress = (report: LabReportDisplay) => {
     // Navigate to detailed lab report view
     router.push({
       pathname: '/patientProfile/detailedLab',
@@ -142,7 +175,7 @@ export default function LabReports() {
     }
   };
 
-  const renderLabReportItem = (report: LabReport) => (
+  const renderLabReportItem = (report: LabReportDisplay) => (
     <TouchableOpacity
       key={report.id}
       style={styles.labReportContainer}
@@ -167,7 +200,7 @@ export default function LabReports() {
       {/* Report Details */}
       <View style={styles.reportDetails}>
         <Text style={styles.reportName}>{report.name}</Text>
-        {report.results.map((result, index) => (
+        {Array.isArray(report.results) && report.results.map((result: LabResult, index: number) => (
           <View key={index} style={styles.resultRow}>
             <Text style={styles.resultValue}>
               {result.value} {result.unit}
@@ -274,7 +307,12 @@ export default function LabReports() {
 
       {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {activeTab === 'results' ? (
+        {loading ? (
+          <View style={{ justifyContent: 'center', alignItems: 'center', marginTop: 40 }}>
+            <ActivityIndicator size="large" color="#7d4c9e" />
+            <Text style={{ marginTop: 10, color: '#64748B' }}>Loading lab reports...</Text>
+          </View>
+        ) : activeTab === 'results' ? (
           <FlatList
             data={filteredData}
             renderItem={renderDateGroup}
@@ -288,10 +326,7 @@ export default function LabReports() {
       </ScrollView>
 
       {/* Bottom Navigation */}
-      <BottomNavigation
-        activeTab="none" // Using 'none' to indicate no active tab
-        onTabPress={() => { }}
-      />
+      <BottomNavigation activeTab="more" />
     </SafeAreaView>
   );
 }

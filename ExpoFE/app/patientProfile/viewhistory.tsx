@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,19 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
-  FlatList
+  FlatList,
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { Feather, FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import styles from './viewhistory.styles';
 import BottomNavigation from '../common/BottomNavigation';
+import { auth } from '../../config/firebaseConfig';
+import {
+  getPatientMedicalHistory,
+  MedicalHistory,
+} from '../../services/firestoreService';
 
 interface HistoryItem {
   id: string;
@@ -19,58 +26,83 @@ interface HistoryItem {
   title: string;
   subtitle: string;
   icon: string;
-  
 }
 
 export default function ViewHistory() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
 
-  // Sample data - replace with actual data from your backend
-  const historyData: HistoryItem[] = [
+  // Sample data fallback
+  const sampleHistoryData: HistoryItem[] = [
     {
       id: '1',
-      date: '04th April 2024',
+      date: '04th April 2025',
       title: 'General Checkup',
       subtitle: 'Dr. Smith - Family Medicine',
       icon: 'stethoscope'
     },
     {
       id: '2',
-      date: '28th March 2024',
+      date: '28th March 2025',
       title: 'Blood Test Results',
       subtitle: 'Lab Report - Complete Blood Count',
       icon: 'vial'
     },
     {
       id: '3',
-      date: '15th March 2024',
+      date: '15th March 2025',
       title: 'Vaccination',
       subtitle: 'COVID-19 Booster Shot',
       icon: 'syringe'
     },
-    {
-      id: '4',
-      date: '02nd March 2024',
-      title: 'Dental Cleaning',
-      subtitle: 'Dr. Johnson - Dentistry',
-      icon: 'tooth'
-    },
-    {
-      id: '5',
-      date: '20th February 2024',
-      title: 'Eye Examination',
-      subtitle: 'Dr. Wilson - Ophthalmology',
-      icon: 'eye'
-    },
-    {
-      id: '6',
-      date: '10th February 2024',
-      title: 'Prescription Refill',
-      subtitle: 'Blood Pressure Medication',
-      icon: 'pills'
-    }
   ];
+
+  useEffect(() => {
+    loadMedicalHistory();
+  }, []);
+
+  const loadMedicalHistory = async () => {
+    try {
+      setLoading(true);
+      const user = auth.currentUser;
+      if (user?.uid) {
+        const records = await getPatientMedicalHistory(user.uid);
+        if (records && records.length > 0) {
+          const converted = records.map((record, index) => ({
+            id: record.id || index.toString(),
+            date: record.visitDate ? new Date(record.visitDate).toLocaleDateString() : 'Unknown Date',
+            title: record.visitReason || 'Medical Visit',
+            subtitle: record.doctorName ? `Dr. ${record.doctorName} - ${record.department || 'General'}` : 'Medical Professional',
+            icon: getIconForVisit(record.visitReason),
+          }));
+          setHistoryData(converted.sort((a, b) => 
+            new Date(b.date).getTime() - new Date(a.date).getTime()
+          ));
+        } else {
+          setHistoryData(sampleHistoryData);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading medical history:', error);
+      Alert.alert('Error', 'Failed to load medical history');
+      setHistoryData(sampleHistoryData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getIconForVisit = (reason?: string): string => {
+    if (!reason) return 'stethoscope';
+    const lowerReason = reason.toLowerCase();
+    if (lowerReason.includes('blood')) return 'vial';
+    if (lowerReason.includes('vaccine')) return 'syringe';
+    if (lowerReason.includes('dental')) return 'tooth';
+    if (lowerReason.includes('eye')) return 'eye';
+    if (lowerReason.includes('prescription')) return 'pills';
+    return 'stethoscope';
+  };
 
   const handleBack = () => {
     router.back();
@@ -106,6 +138,17 @@ export default function ViewHistory() {
     item.subtitle.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color="#7d4c9e" />
+          <Text style={{ marginTop: 10, color: '#64748B' }}>Loading medical history...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -133,20 +176,26 @@ export default function ViewHistory() {
 
       {/* History List */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <FlatList
-          data={filteredData}
-          renderItem={renderHistoryItem}
-          keyExtractor={item => item.id}
-          scrollEnabled={false}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-        />
+        {filteredData.length > 0 ? (
+          <FlatList
+            data={filteredData}
+            renderItem={renderHistoryItem}
+            keyExtractor={item => item.id}
+            scrollEnabled={false}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+          />
+        ) : (
+          <View style={{ alignItems: 'center', marginTop: 40 }}>
+            <FontAwesome5 name="history" size={48} color="#ccc" />
+            <Text style={{ marginTop: 16, fontSize: 16, color: '#999' }}>
+              {searchQuery ? 'No history found' : 'No medical history'}
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
       {/* Bottom Navigation */}
-      <BottomNavigation
-        activeTab="none" // Using 'none' to indicate no active tab
-        onTabPress={() => { }}
-      />
+      <BottomNavigation activeTab="more" />
     </SafeAreaView>
   );
 }
