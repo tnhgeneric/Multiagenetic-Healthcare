@@ -11,8 +11,8 @@ import {
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { profileStyles, colors, spacing } from './styles/doctor.styles';
-import { Doctor, DoctorStats, defaultDoctorProfile, defaultDoctorStats } from '../types/doctor';
-import { firestoreService } from '../services/firestoreService';
+import { Doctor, DoctorStats, defaultDoctorProfile, defaultDoctorStats } from '../../types/doctor';
+import { firestoreService } from '../../services/firestoreService';
 
 /**
  * DoctorProfile.tsx

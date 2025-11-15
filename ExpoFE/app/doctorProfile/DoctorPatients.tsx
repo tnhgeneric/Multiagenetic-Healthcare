@@ -19,8 +19,8 @@ import {
   PatientDetailForDoctor,
   PatientFilters,
   defaultPatientFilters,
-} from '../types/doctor';
-import { firestoreService } from '../services/firestoreService';
+} from '../../types/doctor';
+import { firestoreService } from '../../services/firestoreService';
 
 /**
  * DoctorPatients.tsx

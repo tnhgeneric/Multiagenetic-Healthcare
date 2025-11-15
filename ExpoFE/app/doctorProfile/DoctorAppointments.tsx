@@ -19,8 +19,8 @@ import {
   AppointmentDetail,
   AppointmentStatus,
   defaultAppointmentFilters,
-} from '../types/doctor';
-import { firestoreService } from '../services/firestoreService';
+} from '../../types/doctor';
+import { firestoreService } from '../../services/firestoreService';
 
 /**
  * DoctorAppointments.tsx

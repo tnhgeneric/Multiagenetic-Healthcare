@@ -19,8 +19,8 @@ import {
   PatientBasic,
   defaultDoctorProfile,
   defaultDoctorStats,
-} from '../types/doctor';
-import { firestoreService } from '../services/firestoreService';
+} from '../../types/doctor';
+import { firestoreService } from '../../services/firestoreService';
 import DoctorAppointments from './DoctorAppointments';
 import DoctorPatients from './DoctorPatients';
 import DoctorProfile from './DoctorProfile';

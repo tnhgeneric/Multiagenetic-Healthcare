@@ -235,6 +235,45 @@ export const appointmentsStyles = StyleSheet.create({
     backgroundColor: COLORS.lightGray,
   },
 
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.lg,
+  },
+
+  loadingText: {
+    marginTop: SPACING.md,
+    fontSize: FONT_SIZES.base,
+    color: COLORS.darkSecondary,
+  },
+
+  emptyText: {
+    fontSize: FONT_SIZES.lg,
+    color: COLORS.darkSecondary,
+    marginBottom: SPACING.md,
+  },
+
+  emptySubtext: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.darkSecondary,
+    opacity: 0.7,
+  },
+
+  errorContainer: {
+    backgroundColor: COLORS.danger,
+    padding: SPACING.md,
+    borderRadius: BORDER_RADIUS.md,
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.md,
+  },
+
+  errorText: {
+    color: COLORS.white,
+    fontSize: FONT_SIZES.sm,
+    fontWeight: FONT_WEIGHTS.medium,
+  },
+
   filterContainer: {
     backgroundColor: COLORS.white,
     paddingHorizontal: SPACING.lg,
@@ -376,6 +415,45 @@ export const patientsStyles = StyleSheet.create({
     backgroundColor: COLORS.lightGray,
   },
 
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.lg,
+  },
+
+  loadingText: {
+    marginTop: SPACING.md,
+    fontSize: FONT_SIZES.base,
+    color: COLORS.darkSecondary,
+  },
+
+  emptyText: {
+    fontSize: FONT_SIZES.lg,
+    color: COLORS.darkSecondary,
+    marginBottom: SPACING.md,
+  },
+
+  emptySubtext: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.darkSecondary,
+    opacity: 0.7,
+  },
+
+  errorContainer: {
+    backgroundColor: COLORS.danger,
+    padding: SPACING.md,
+    borderRadius: BORDER_RADIUS.md,
+    marginHorizontal: SPACING.md,
+    marginTop: SPACING.md,
+  },
+
+  errorText: {
+    color: COLORS.white,
+    fontSize: FONT_SIZES.sm,
+    fontWeight: FONT_WEIGHTS.medium,
+  },
+
   searchContainer: {
     backgroundColor: COLORS.white,
     padding: SPACING.md,
@@ -467,6 +545,31 @@ export const profileStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.lightGray,
+  },
+
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.lg,
+  },
+
+  loadingText: {
+    marginTop: SPACING.md,
+    fontSize: FONT_SIZES.base,
+    color: COLORS.darkSecondary,
+  },
+
+  emptyText: {
+    fontSize: FONT_SIZES.lg,
+    color: COLORS.darkSecondary,
+    marginBottom: SPACING.md,
+  },
+
+  emptySubtext: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.darkSecondary,
+    opacity: 0.7,
   },
 
   headerSection: {
