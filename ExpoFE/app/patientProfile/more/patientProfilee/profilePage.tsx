@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { styles } from './profilePage.styles'; 
+import styles from './profilePage.styles.ts'; 
 import BottomNavigation from '../../../common/BottomNavigation';
 import useUserProfile from '../../../../hooks/useUserProfile';
 import { auth } from '../../../../config/firebaseConfig';

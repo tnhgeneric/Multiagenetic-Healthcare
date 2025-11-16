@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import styles from './healthtips.styles';
+import styles from './healthtips.styles.ts';
 import BottomNavigation from '../../../common/BottomNavigation';
 
 export default function Notifications() {

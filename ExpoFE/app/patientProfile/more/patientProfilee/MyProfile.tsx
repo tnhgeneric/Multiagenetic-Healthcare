@@ -11,7 +11,7 @@ import {
 import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import styles from './MyProfile.styles';
+import styles from './MyProfile.styles.ts';
 import { auth } from '../../../../config/firebaseConfig';
 import useUserProfile from '../../../../hooks/useUserProfile';
 import BottomNavigation from '../../../common/BottomNavigation';
@@ -261,7 +261,7 @@ const MyProfileScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      <BottomNavigation activeTab="profile" onTabPress={() => { }} />
+      <BottomNavigation activeTab="more" onTabPress={() => { }} />
     </SafeAreaView>
   );
 };
