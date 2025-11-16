@@ -58,20 +58,25 @@ interface WalkthroughSlide {
 // Walkthrough content
 const walkthroughSlides: WalkthroughSlide[] = [
   {
-    image: require('../../assets/images/walk-1.jpg'),
-    title: 'AI-Powered Health Assistant',
-    description: 'Get instant health insights and personalized care recommendations'
+    image: require('../../assets/images/state.webp'),
+    title: 'See your health come alive',
+    description: 'Stay on top of your health anytime, anywhere. Track your wellness journey with clarity and confidence',
+  },
+  {
+    image: require('../../assets/images/sich.png'),
+    title: 'Know your condition. Know your next step.',
+    description: 'Let Arti help you understand what\'s really happening inside your body.',
   },
   {
     image: require('../../assets/images/walk-2.jpg'),
-    title: 'Smart Patient Journey',
-    description: 'Track your health journey with intelligent monitoring and support'
+    title: 'Connect with care, instantly',
+    description: 'Prepare, discuss, and follow up with confidence. One tap to your trusted doctor'
   },
   {
     image: require('../../assets/images/walk-3.jpg'),
-    title: 'Multi-Agent Care',
-    description: 'Coordinated care through our advanced multi-agent system'
-  }
+    title: 'Your personalized health Roadmap',
+    description: 'Navigate from diagnosis to recovery with guided support'
+  },
 ];
 
 // Network test function with improved resilience
