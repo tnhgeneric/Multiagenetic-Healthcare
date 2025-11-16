@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import styles from './MyProfile.styles.ts';
 import { auth } from '../../../../config/firebaseConfig';
@@ -40,12 +39,11 @@ const ProfileItem: React.FC<ProfileItemProps> = ({
       activeOpacity={0.7}
     >
       <View style={styles.itemLeft}>
-        <LinearGradient
-          colors={[iconBackgroundColor, iconBackgroundColor + '80']}
-          style={styles.itemIcon}
+        <View
+          style={[styles.itemIcon, { backgroundColor: iconBackgroundColor }]}
         >
           <Ionicons name={icon} size={20} color={iconColor} />
-        </LinearGradient>
+        </View>
         <Text style={styles.itemTitle}>{title}</Text>
       </View>
       {showEditIcon && (
@@ -156,9 +154,8 @@ const MyProfileScreen: React.FC = () => {
             style={styles.profileImageContainer}
             activeOpacity={0.8}
           >
-            <LinearGradient
-              colors={['#8B5CF6', '#A855F7']}
-              style={styles.profileImageGradient}
+            <View
+              style={[styles.profileImageGradient, { backgroundColor: '#8B5CF6' }]}
             >
               {userProfile.profilePicture ? (
                 <Image source={{ uri: userProfile.profilePicture }} style={styles.profileImage} />
@@ -167,7 +164,7 @@ const MyProfileScreen: React.FC = () => {
                   <Ionicons name="person" size={40} color="#ffffff" />
                 </View>
               )}
-            </LinearGradient>
+            </View>
             <View style={[styles.cameraIcon, { backgroundColor: '#8B5CF6' }]}>
               <Ionicons name="camera" size={16} color="#ffffff" />
             </View>
