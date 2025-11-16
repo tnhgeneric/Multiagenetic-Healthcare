@@ -966,36 +966,25 @@ export const firestoreService = {
   getPatientProfile,
   updatePatientProfile,
   createPatientProfile,
-  getTasksByPatientId,
-  createTask,
-  updateTask,
-  deleteTask,
-  getNotificationsByPatientId,
-  createNotification,
-  deleteNotification,
-  
-  // Appointment operations
-  getAppointmentsByPatientId,
-  getAppointmentsByDoctorName,
-  createAppointment,
-  updateAppointment,
-  deleteAppointment,
-  
-  // Lab reports
-  getLabReportsByPatientId,
-  createLabReport,
-  
-  // Medications
-  getMedicationsByPatientId,
-  createMedication,
-  updateMedication,
-  
-  // Medical history
-  getMedicalHistoryByPatientId,
-  createMedicalHistory,
+  getPatientAppointments,
+  getPatientAppointmentsByDate,
+  getPatientMedications,
+  getActiveMedications,
+  addMedication,
+  getPatientLabReports,
+  getRecentLabReports,
+  getLabReport,
+  getPatientMedicalHistory,
+  getPatientTasks,
+  getAllPatientTasks,
+  completeTask,
   
   // User operations
   getUserProfile,
+  
+  // Doctor operations
+  getDoctorInfo,
+  searchDoctorsBySpecialization,
   
   // Doctor operations (Phase 4)
   getDoctorProfile,
