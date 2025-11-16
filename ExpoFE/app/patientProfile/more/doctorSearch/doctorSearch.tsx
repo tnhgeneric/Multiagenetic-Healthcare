@@ -12,7 +12,9 @@ import {
 } from 'react-native';
 import { Feather, FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import styles from './doctorSearch.styles';
+import type { StyleProp, ViewStyle } from 'react-native';
+
+const styles = require('./doctorSearch.styles').default;
 import BottomNavigation from '../../../common/BottomNavigation';
 
 interface Doctor {

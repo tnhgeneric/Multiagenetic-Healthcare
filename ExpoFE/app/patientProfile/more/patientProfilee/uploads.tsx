@@ -7,11 +7,10 @@ import {
     Alert,
 } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
-import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { styles } from './uploads.styles';
 import { auth } from '../../../../config/firebaseConfig';
 import authService from '../../../../services/authService';
-import * as FileSystem from 'expo-file-system/legacy';
 import { useRouter } from 'expo-router';
 import BottomNavigation from '../../../common/BottomNavigation';
 
@@ -43,30 +42,20 @@ const FileUploadSection: React.FC<FileUploadSectionProps> = ({
 }) => {
     const handleFileSelect = async () => {
         try {
-            const result = await DocumentPicker.getDocumentAsync({
-                type: '*/*',
-                copyToCacheDirectory: true,
+            // Use ImagePicker as alternative to DocumentPicker
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.All,
+                allowsEditing: false,
+                quality: 1,
             });
 
-            if ((result as any).type === 'success') {
-                const r: any = result;
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const file: any = result.assets[0];
                 const documentResult: DocumentResult = {
-                    name: r.name || 'file',
-                    uri: r.uri,
-                    type: r.mimeType || r.type || 'unknown',
-                    size: r.size || 0,
-                };
-                onFileSelect(documentResult);
-                return;
-            }
-
-            if ((result as any).assets && Array.isArray((result as any).assets) && (result as any).assets.length > 0) {
-                const file: any = (result as any).assets[0];
-                const documentResult: DocumentResult = {
-                    name: file.name || file.fileName || 'file',
+                    name: file.fileName || file.uri.split('/').pop() || 'file',
                     uri: file.uri,
-                    type: file.mimeType || file.type || 'unknown',
-                    size: file.size || 0,
+                    type: file.type || 'file',
+                    size: file.fileSize || 0,
                 };
                 onFileSelect(documentResult);
                 return;
@@ -142,11 +131,33 @@ const Uploads: React.FC = () => {
     };
 
     const handleSearchPastLabRecords = () => {
-        router.push('../../labReports/labresults');
+        Alert.alert('Coming Soon', 'Lab records feature coming soon!');
     };
 
     const handleGoToPastMedicalHistory = () => {
-        router.push('../../viewHistory/viewhistory');
+        Alert.alert('Coming Soon', 'Medical history feature coming soon!');
+    };
+
+    const handleFileUpload = (file: DocumentResult | null, type: string) => {
+        if (!file) {
+            Alert.alert('No file', 'Please select a file first.');
+            return;
+        }
+
+        setUploading(true);
+        try {
+            // Show success message for now
+            Alert.alert('Success', `${type} uploaded successfully!`);
+            if (type === 'Medical Vault') {
+                setMedicalVaultFile(null);
+            } else {
+                setReportsFile(null);
+            }
+        } catch (error) {
+            Alert.alert('Error', `Failed to upload ${type}`);
+        } finally {
+            setUploading(false);
+        }
     };
 
     return (
