@@ -1,4 +1,4 @@
-import { View, Image, StyleSheet, Dimensions, ImageSourcePropType, TouchableOpacity } from 'react-native';
+import { View, Image, StyleSheet, Dimensions, ImageSourcePropType, TouchableOpacity, Text } from 'react-native';
 import React, { useEffect } from 'react';
 //import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -51,6 +51,12 @@ const Landingpage: React.FC = () => {
           resizeMode="contain" 
         />
      
+      </View>
+
+      {/* Powered by footer - Industry standard placement */}
+      <View style={styles.poweredByContainer}>
+        <Text style={styles.poweredByText}>Powered by</Text>
+        <Text style={styles.companyName}>Agentic Ensemble AI</Text>
       </View>
 
     </TouchableOpacity>
@@ -118,6 +124,29 @@ const styles = StyleSheet.create({
     height: 100,
     opacity: 0.3,
     transform: [{ rotate: '5deg' }], // Add this line to rotate the image -45 degrees
+  },
+  poweredByContainer: {
+    position: 'absolute',
+    bottom: 30, // Standard spacing from bottom
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+    //backgroundColor: 'rgba(255, 255, 255, 0.8)', // Semi-transparent white background
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    elevation: 3, // For Android shadow
+  },
+  poweredByText: {
+    fontSize: 12,
+    color: '#666', // Subtle gray color
+    fontWeight: '400',
+    marginBottom: 2,
+  },
+  companyName: {
+    fontSize: 14,
+    color: '#460404ff', // Darker color for company name
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
  
 });
