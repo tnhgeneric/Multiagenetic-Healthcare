@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { styles } from './uploads.styles';
+import styles from './uploads.styles';
 import { auth } from '../../../../config/firebaseConfig';
 import authService from '../../../../services/authService';
 import { useRouter } from 'expo-router';
