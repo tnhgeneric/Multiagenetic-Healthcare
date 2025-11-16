@@ -174,7 +174,7 @@ export default function UpdateProfile() {
             <TextInput
               style={[
                 { borderWidth: 1, borderColor: '#ddd', padding: 10, borderRadius: 8, color: '#333' },
-                errors.fullName && { borderColor: '#e74c3c' }
+                errors.fullName ? { borderColor: '#e74c3c' } : {},
               ]}
               placeholder="Enter your full name"
               value={formData.fullName || ''}
@@ -192,7 +192,7 @@ export default function UpdateProfile() {
             <TextInput
               style={[
                 { borderWidth: 1, borderColor: '#ddd', padding: 10, borderRadius: 8, color: '#333' },
-                errors.dateOfBirth && { borderColor: '#e74c3c' }
+                errors.dateOfBirth ? { borderColor: '#e74c3c' } : {},
               ]}
               placeholder="YYYY-MM-DD"
               value={formData.dateOfBirth || ''}
@@ -222,7 +222,7 @@ export default function UpdateProfile() {
             <TextInput
               style={[
                 { borderWidth: 1, borderColor: '#ddd', padding: 10, borderRadius: 8, color: '#333' },
-                errors.phone && { borderColor: '#e74c3c' }
+                errors.phone ? { borderColor: '#e74c3c' } : {},
               ]}
               placeholder="+1 (555) 123-4567"
               value={formData.phone || ''}
