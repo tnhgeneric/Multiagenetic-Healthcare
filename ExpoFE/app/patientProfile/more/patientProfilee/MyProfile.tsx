@@ -12,7 +12,7 @@ import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import styles from './MyProfile.styles.ts';
 import { auth } from '../../../../config/firebaseConfig';
-import useUserProfile from '../../../../hooks/useUserProfile';
+import useUserProfile from '../../../../../hooks/useUserProfile';
 import BottomNavigation from '../../../common/BottomNavigation';
 
 interface ProfileItemProps {
