@@ -3,16 +3,17 @@
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
+import { getStorage } from 'firebase/storage';
 
 // Web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCVL4efka1PUOtxnPKY6nSBlURy2C_Rw58",
-  authDomain: "lifefile-app-7deab.firebaseapp.com",
-  projectId: "lifefile-app-7deab",
-  storageBucket: "lifefile-app-7deab.firebasestorage.app",
-  messagingSenderId: "356353823669",
-  appId: "1:356353823669:web:df3271ebbb17ec280dbffc",
-  measurementId: "G-P7J050DBBJ"
+  apiKey: "AIzaSyAU7auZBogfjflD8ycAMyrtEOJhFNBn-c8",
+  authDomain: "health-app-cb517.firebaseapp.com",
+  projectId: "health-app-cb517",
+  storageBucket: "health-app-cb517.firebasestorage.app",
+  messagingSenderId: "1085443182151",
+  appId: "1:1085443182151:web:c0dc1420bddcf87d42ab62",
+  measurementId: "G-CNJJMDBBMR"
 };
 
 if (!firebase.apps.length) {
@@ -23,4 +24,5 @@ if (!firebase.apps.length) {
 // Export auth and firestore instances
 export const auth = firebase.auth();
 export const db = firebase.firestore();
+export const storage = getStorage(firebase.app()); // Get modular storage from compat app
 export {firebase};
