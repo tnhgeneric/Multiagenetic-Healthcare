@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import styles from './profilePage.styles.ts'; 
 import BottomNavigation from '../../../common/BottomNavigation';
-import useUserProfile from '../../../../hooks/useUserProfile';
+import useUserProfile from '@/hooks/useUserProfile';
 import { auth } from '../../../../config/firebaseConfig';
 
 interface ProfileStats {
