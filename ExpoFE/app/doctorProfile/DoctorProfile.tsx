@@ -72,10 +72,10 @@ const DoctorProfile: React.FC<Props> = ({ doctorId, onLogout, onRefresh }) => {
         totalPatients: patients.length,
         appointmentsToday: appointments.filter(
           (apt) =>
-            new Date(apt.scheduledDate).toDateString() === new Date().toDateString(),
+            apt.date === new Date().toISOString().split('T')[0],
         ).length,
         pendingAppointments: appointments.filter(
-          (apt) => apt.status === 'scheduled' || apt.status === 'in-progress',
+          (apt) => apt.status === 'scheduled',
         ).length,
         completedAppointments: appointments.filter(
           (apt) => apt.status === 'completed',

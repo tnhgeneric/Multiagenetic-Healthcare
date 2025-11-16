@@ -40,11 +40,11 @@ interface Props {
 }
 
 interface ComponentState {
-  patients: PatientBasic[];
-  filteredPatients: PatientBasic[];
+  patients: any[];
+  filteredPatients: any[];
   searchTerm: string;
   filters: PatientFilters;
-  selectedPatient: PatientDetailForDoctor | null;
+  selectedPatient: any;
   showDetailModal: boolean;
   loading: boolean;
   refreshing: boolean;
@@ -100,20 +100,26 @@ const DoctorPatients: React.FC<Props> = ({ doctorId, onRefresh }) => {
    * Apply filters and search to patients
    */
   const applyFilters = (
-    patients: PatientBasic[],
+    patients: any[],
     filters: PatientFilters,
     searchTerm: string,
-  ): PatientBasic[] => {
+  ): any[] => {
     let filtered = [...patients];
 
     // Search by name, email, or phone
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(
-        (patient) =>
-          patient.name.toLowerCase().includes(term) ||
-          patient.email.toLowerCase().includes(term) ||
-          patient.phone.toLowerCase().includes(term),
+        (patient) => {
+          const name = `${patient.firstName} ${patient.lastName}`.toLowerCase();
+          const email = (patient.email || '').toLowerCase();
+          const phone = (patient.phone || '').toLowerCase();
+          return (
+            name.includes(term) ||
+            email.includes(term) ||
+            phone.includes(term)
+          );
+        },
       );
     }
 
@@ -123,15 +129,9 @@ const DoctorPatients: React.FC<Props> = ({ doctorId, onRefresh }) => {
         let compareValue = 0;
 
         if (filters.sortBy === 'name') {
-          compareValue = a.name.localeCompare(b.name);
-        } else if (filters.sortBy === 'lastVisit') {
-          const dateA = a.lastVisitDate ? new Date(a.lastVisitDate).getTime() : 0;
-          const dateB = b.lastVisitDate ? new Date(b.lastVisitDate).getTime() : 0;
-          compareValue = dateA - dateB;
-        } else if (filters.sortBy === 'nextAppointment') {
-          const dateA = a.nextAppointmentDate ? new Date(a.nextAppointmentDate).getTime() : 0;
-          const dateB = b.nextAppointmentDate ? new Date(b.nextAppointmentDate).getTime() : 0;
-          compareValue = dateA - dateB;
+          const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+          const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+          compareValue = nameA.localeCompare(nameB);
         }
 
         return filters.sortOrder === 'desc' ? -compareValue : compareValue;
@@ -352,7 +352,7 @@ const DoctorPatients: React.FC<Props> = ({ doctorId, onRefresh }) => {
           renderItem={({ item: patient }) => {
             const initials = patient.name
               .split(' ')
-              .map((n) => n.charAt(0))
+              .map((n: string) => n.charAt(0))
               .join('')
               .toUpperCase();
 
@@ -594,7 +594,7 @@ const DoctorPatients: React.FC<Props> = ({ doctorId, onRefresh }) => {
                       >
                         ⚠️ Allergies
                       </Text>
-                      {selectedPatient.allergies.map((allergy, idx) => (
+                      {selectedPatient?.allergies?.map((allergy: any, idx: number) => (
                         <Text key={idx} style={{ color: colors.dark, marginBottom: spacing.xs }}>
                           • {allergy}
                         </Text>
@@ -616,7 +616,7 @@ const DoctorPatients: React.FC<Props> = ({ doctorId, onRefresh }) => {
                         >
                           Current Medications
                         </Text>
-                        {selectedPatient.currentMedications.map((med, idx) => (
+                        {selectedPatient?.currentMedications?.map((med: any, idx: number) => (
                           <View
                             key={idx}
                             style={{
@@ -658,7 +658,7 @@ const DoctorPatients: React.FC<Props> = ({ doctorId, onRefresh }) => {
                       >
                         Medical History
                       </Text>
-                      {selectedPatient.medicalHistory.slice(0, 3).map((history, idx) => (
+                      {selectedPatient?.medicalHistory?.slice(0, 3).map((history: any, idx: number) => (
                         <View
                           key={idx}
                           style={{

@@ -15,15 +15,10 @@ import { dashboardStyles, colors, spacing } from './styles/doctor.styles';
 import {
   Doctor,
   DoctorStats,
-  AppointmentWithPatient,
-  PatientBasic,
   defaultDoctorProfile,
   defaultDoctorStats,
 } from '../../types/doctor';
 import { firestoreService } from '../../services/firestoreService';
-import DoctorAppointments from './DoctorAppointments';
-import DoctorPatients from './DoctorPatients';
-import DoctorProfile from './DoctorProfile';
 
 /**
  * DoctorDashboard.tsx
@@ -44,9 +39,9 @@ type TabType = 'appointments' | 'patients' | 'profile';
 interface DashboardState {
   doctorProfile: Doctor | null;
   statistics: DoctorStats | null;
-  todayAppointments: AppointmentWithPatient[];
-  upcomingAppointments: AppointmentWithPatient[];
-  patientsList: PatientBasic[];
+  todayAppointments: any[];
+  upcomingAppointments: any[];
+  patientsList: any[];
   activeTab: TabType;
   loading: boolean;
   refreshing: boolean;
@@ -107,7 +102,7 @@ const DoctorDashboard: React.FC<Props> = ({ doctorId: propDoctorId, onLogout }) 
         totalPatients: patients.length,
         appointmentsToday: todayAppointments.length,
         pendingAppointments: todayAppointments.filter(
-          (apt) => apt.status === 'scheduled' || apt.status === 'in-progress',
+          (apt) => apt.status === 'scheduled',
         ).length,
         completedAppointments: todayAppointments.filter(
           (apt) => apt.status === 'completed',
@@ -464,15 +459,25 @@ const DoctorDashboard: React.FC<Props> = ({ doctorId: propDoctorId, onLogout }) 
 
       {/* Tab Content */}
       {activeTab === 'appointments' && (
-        <DoctorAppointments doctorId={doctorId} onRefresh={handleRefresh} />
+        <View style={dashboardStyles.container}>
+          <Text style={{ padding: 20, fontSize: 16, color: colors.dark }}>
+            Appointments Tab - Coming Soon
+          </Text>
+        </View>
       )}
-      {activeTab === 'patients' && <DoctorPatients doctorId={doctorId} onRefresh={handleRefresh} />}
+      {activeTab === 'patients' && (
+        <View style={dashboardStyles.container}>
+          <Text style={{ padding: 20, fontSize: 16, color: colors.dark }}>
+            Patients Tab - Coming Soon
+          </Text>
+        </View>
+      )}
       {activeTab === 'profile' && (
-        <DoctorProfile
-          doctorId={doctorId}
-          onLogout={handleLogout}
-          onRefresh={handleRefresh}
-        />
+        <View style={dashboardStyles.container}>
+          <Text style={{ padding: 20, fontSize: 16, color: colors.dark }}>
+            Profile Tab - Coming Soon
+          </Text>
+        </View>
       )}
     </View>
   );

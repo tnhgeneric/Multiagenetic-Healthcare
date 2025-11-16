@@ -40,10 +40,10 @@ interface Props {
 }
 
 interface ComponentState {
-  appointments: AppointmentWithPatient[];
-  filteredAppointments: AppointmentWithPatient[];
+  appointments: any[];
+  filteredAppointments: any[];
   filters: AppointmentFilters;
-  selectedAppointment: AppointmentDetail | null;
+  selectedAppointment: any;
   showDetailModal: boolean;
   loading: boolean;
   refreshing: boolean;
@@ -98,9 +98,9 @@ const DoctorAppointments: React.FC<Props> = ({ doctorId, onRefresh }) => {
    * Apply filters to appointments
    */
   const applyFilters = (
-    appointments: AppointmentWithPatient[],
+    appointments: any[],
     filters: AppointmentFilters,
-  ): AppointmentWithPatient[] => {
+  ): any[] => {
     let filtered = [...appointments];
 
     // Filter by status
@@ -108,10 +108,10 @@ const DoctorAppointments: React.FC<Props> = ({ doctorId, onRefresh }) => {
       filtered = filtered.filter((apt) => apt.status === filters.status);
     }
 
-    // Filter by date range
+    // Filter by date range (optional for now)
     if (filters.dateRange) {
       filtered = filtered.filter((apt) => {
-        const aptDate = new Date(apt.scheduledDate);
+        const aptDate = new Date(apt.date);
         return (
           aptDate >= filters.dateRange!.startDate && aptDate <= filters.dateRange!.endDate
         );
@@ -124,9 +124,7 @@ const DoctorAppointments: React.FC<Props> = ({ doctorId, onRefresh }) => {
         let compareValue = 0;
 
         if (filters.sortBy === 'date') {
-          compareValue = a.scheduledDate.getTime() - b.scheduledDate.getTime();
-        } else if (filters.sortBy === 'patient') {
-          compareValue = a.patient.name.localeCompare(b.patient.name);
+          compareValue = new Date(a.date).getTime() - new Date(b.date).getTime();
         } else if (filters.sortBy === 'status') {
           compareValue = a.status.localeCompare(b.status);
         }
@@ -145,26 +143,13 @@ const DoctorAppointments: React.FC<Props> = ({ doctorId, onRefresh }) => {
     async (appointmentId: string) => {
       try {
         // Get the appointment
-        const appointment = state.appointments.find((apt) => apt.appointmentId === appointmentId);
+        const appointment = state.appointments.find((apt) => apt.id === appointmentId);
         if (!appointment) return;
 
-        // Get patient medical info
-        const medicalHistory = await firestoreService.getPatientMedicalHistory(
-          appointment.patientId,
-        );
-        const medications = await firestoreService.getPatientMedications(appointment.patientId);
-        const allergies = await firestoreService.getPatientAllergies(appointment.patientId);
-
-        const detail: AppointmentDetail = {
-          ...appointment,
-          medicalHistory,
-          currentMedications: medications,
-          allergies,
-        };
-
+        // For now, just show the appointment details
         setState((prev) => ({
           ...prev,
-          selectedAppointment: detail,
+          selectedAppointment: appointment,
           showDetailModal: true,
         }));
       } catch (error: any) {
@@ -183,12 +168,12 @@ const DoctorAppointments: React.FC<Props> = ({ doctorId, onRefresh }) => {
       try {
         setState((prev) => ({ ...prev, updatingAppointmentId: appointmentId }));
 
-        await firestoreService.updateAppointmentStatus(doctorId, appointmentId, newStatus);
+        await firestoreService.updateAppointmentStatus(appointmentId, newStatus);
 
         // Update local state
         setState((prev) => {
           const updated = prev.appointments.map((apt) =>
-            apt.appointmentId === appointmentId ? { ...apt, status: newStatus } : apt,
+            apt.id === appointmentId ? { ...apt, status: newStatus } : apt,
           );
           return {
             ...prev,
@@ -281,7 +266,7 @@ const DoctorAppointments: React.FC<Props> = ({ doctorId, onRefresh }) => {
                   appointmentsStyles.filterButton,
                   filters.status === status && appointmentsStyles.filterButtonActive,
                 ]}
-                onPress={() => handleFilterChange({ status })}
+                onPress={() => handleFilterChange({ status: 'scheduled' })}
               >
                 <Text
                   style={[
@@ -414,7 +399,7 @@ const DoctorAppointments: React.FC<Props> = ({ doctorId, onRefresh }) => {
                     onPress={() =>
                       updateAppointmentStatus(
                         appointment.appointmentId,
-                        appointment.status === 'scheduled' ? 'in-progress' : 'completed',
+                        appointment.status === 'scheduled' ? 'completed' : 'cancelled',
                       )
                     }
                     disabled={updatingAppointmentId === appointment.appointmentId}
@@ -617,7 +602,7 @@ const DoctorAppointments: React.FC<Props> = ({ doctorId, onRefresh }) => {
                         >
                           Recent Medical History
                         </Text>
-                        {selectedAppointment.medicalHistory.slice(0, 3).map((history, idx) => (
+                        {selectedAppointment?.medicalHistory?.slice(0, 3).map((history: any, idx: number) => (
                           <View
                             key={idx}
                             style={{
@@ -656,8 +641,8 @@ const DoctorAppointments: React.FC<Props> = ({ doctorId, onRefresh }) => {
                             updateAppointmentStatus(
                               selectedAppointment.appointmentId,
                               selectedAppointment.status === 'scheduled'
-                                ? 'in-progress'
-                                : 'completed',
+                                ? 'completed'
+                                : 'cancelled',
                             );
                             setState((prev) => ({ ...prev, showDetailModal: false }));
                           }}

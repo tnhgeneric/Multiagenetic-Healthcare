@@ -24,8 +24,8 @@ export interface Doctor {
   officeHours?: OfficeHours;
   rating?: number;
   reviewCount?: number;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date | any;
+  updatedAt?: Date | any;
 }
 
 /**
@@ -69,28 +69,25 @@ export interface DoctorStats {
 
 /**
  * Appointment with patient details (for doctor dashboard)
+ * Maps to firestoreService.Appointment
  */
 export interface AppointmentWithPatient {
-  appointmentId: string;
-  doctorId: string;
+  id: string;
   patientId: string;
-  patient: PatientBasic;
-  scheduledDate: Date;
-  scheduledTime: string; // HH:MM
+  doctorId: string;
+  doctorName: string;
+  date: string; // 'YYYY-MM-DD'
+  time: string; // 'HH:MM'
   status: AppointmentStatus;
-  reason: string;
-  diagnosis?: string;
-  treatment?: string;
-  followUpRequired: boolean;
-  notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  notes: string;
+  type: 'meeting' | 'task';
+  createdAt?: any;
 }
 
 /**
  * Appointment status
  */
-export type AppointmentStatus = 'scheduled' | 'in-progress' | 'completed' | 'cancelled' | 'no-show';
+export type AppointmentStatus = 'scheduled' | 'completed' | 'cancelled';
 
 /**
  * Appointment with detailed patient medical info
@@ -106,17 +103,17 @@ export interface AppointmentDetail extends AppointmentWithPatient {
 
 /**
  * Basic patient information (for lists)
+ * Maps to firestoreService.PatientProfile (simplified)
  */
 export interface PatientBasic {
-  patientId: string;
-  name: string;
+  uid: string;
   email: string;
-  phone: string;
-  dateOfBirth: Date;
-  gender: 'male' | 'female' | 'other';
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string;
+  gender?: 'male' | 'female' | 'other';
   profileImage?: string;
-  lastVisitDate?: Date;
-  nextAppointmentDate?: Date;
+  phone?: string;
 }
 
 /**
