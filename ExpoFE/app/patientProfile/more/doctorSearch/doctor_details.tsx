@@ -15,7 +15,6 @@ import {
     Platform,
 } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import BottomNavigation from '../../../common/BottomNavigation';
 
 const { width } = Dimensions.get('window');
@@ -172,7 +171,7 @@ const DoctorProfile: React.FC = () => {
                         </View>
                         {/* Doctor Image */}
                         <View style={styles.doctorImageContainer}>
-                            <LinearGradient colors={["#8B5CF6", "#A855F7"]} style={styles.imageGradientBorder}>
+                            <View style={[styles.imageGradientBorder, { backgroundColor: '#8B5CF6' }]}>
                                 {doctor.profilePicture ? (
                                     <Image source={{ uri: doctor.profilePicture }} style={styles.doctorImagePlaceholder} />
                                 ) : (
@@ -180,7 +179,7 @@ const DoctorProfile: React.FC = () => {
                                         <Ionicons name="person" size={50} color="#8B5CF6" />
                                     </View>
                                 )}
-                            </LinearGradient>
+                            </View>
                         </View>
                     </View>
                 </View>
@@ -228,10 +227,10 @@ const DoctorProfile: React.FC = () => {
 
                 <View style={styles.actionContainer}>
                     <TouchableOpacity style={styles.appointmentButton} activeOpacity={0.8} onPress={handleEChanneling}>
-                        <LinearGradient colors={["#8B5CF6", "#A855F7"]} style={styles.appointmentGradient}>
+                        <View style={[styles.appointmentGradient, { backgroundColor: '#8B5CF6' }]}>
                             <Ionicons name="calendar" size={20} color="#ffffff" />
                             <Text style={styles.appointmentButtonText}>Book via eChannelling</Text>
-                        </LinearGradient>
+                        </View>
                     </TouchableOpacity>
                 </View>
 
