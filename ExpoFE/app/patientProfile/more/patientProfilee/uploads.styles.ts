@@ -149,42 +149,6 @@ const styles = StyleSheet.create({
   },
 
   // Responsive adjustments for smaller screens
-  ...(screenWidth < 375 && {
-    header: {
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-    },
-
-    contentContainer: {
-      padding: 16,
-    },
-
-    fileUploadSection: {
-      padding: 16,
-    },
-
-    navigationItem: {
-      padding: 16,
-    },
-
-    sectionIcon: {
-      width: 40,
-      height: 40,
-    },
-
-    navigationIcon: {
-      width: 40,
-      height: 40,
-    },
-
-    sectionTitle: {
-      fontSize: 15,
-    },
-
-    navigationTitle: {
-      fontSize: 15,
-    },
-  }),
 });
 
 export default styles;
