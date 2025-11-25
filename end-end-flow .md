@@ -417,11 +417,11 @@ By implementing these recommendations, your system will be more robust, maintain
 
 Below is a detailed, step-by-step explanation of each component and flow in the improved architecture diagram:
 
-1. **User (Frontend) (WelcomeScreen, AgentChat.tsx)**
+1. **User (Frontend) (WelcomeScreen.tsx)**
    - The user interacts with the app, entering symptoms or questions via the chat interface.
    - The chat UI collects the user's input and displays it immediately.
 
-2. **Frontend API (ExpoFE/services/backendApi.ts)**
+2. **Frontend API (Frontend/services/backendApi.ts)**
    - The frontend sends the raw user input (and minimal metadata) to the backend via the API service.
    - No workflow structuring or enrichment is done here; the request is passed as-is.
 
@@ -482,11 +482,11 @@ Below is a detailed, step-by-step explanation of each component and flow in the 
     - Collects user feedback and manages conversation state and context.
     - Supports learning, personalization, and continuous improvement of the system.
 
-16. **Frontend API (ExpoFE/services/backendApi.ts)**
+16. **Frontend API (Frontend/services/backendApi.ts)**
     - Receives the final aggregated result from the backend.
     - Passes the result to the chat UI for display.
 
-17. **User (Frontend) (WelcomeScreen, AgentChat.tsx)**
+17. **User (Frontend) (WelcomeScreen.tsx)**
     - The user sees the results in the chat interface and can continue the conversation, starting the cycle again.
 
 ---
@@ -853,151 +853,212 @@ All enrichment (MCP/ACL structuring) is done in the frontend. The orchestration 
 
 ## 9. Improved Architecture Diagram (with Prompt Processor, FHIR Integration & Service Layer)
 
-Below is a modernized architecture diagram reflecting the latest flow with FHIR context integration and patient ID handling:
+Below is a modernized architecture diagram reflecting the latest flow with Prompt Processor for LLM-based enrichment, FHIR context integration, and patient ID handling:
 
 ```
 ┌─────────────────────────────┐
 │        User (Frontend)      │
-│  (WelcomeScreen, AgentChat.tsx,FormatResults function) │
-│  - Displays patient ID      │
-│  - Shows chat interface     │
+│  (WelcomeScreen.tsx)        │
+│  - Chat interface           │
+│ 
+│  - Shows results            │
 └─────────────┬───────────────┘
               │
+              │ 1. User enters symptoms/query
               ▼
 ┌──────────────────────────────────────────────┐
-│ Frontend API (ExpoFE/services/backendApi.ts) │
-│  (Called by AgentChat.tsx for chat input)    │
-│  - Sends user input, patient context         │
-│  - Handles patient ID propagation            │
+│ Frontend API (Frontend/services/backendApi.ts) │
+│  (Called by WelcomeScreen.tsx)               │
+│  - Sends raw user input                      │
+│  - Includes patient context (if available)   │
+│  - Sends to Prompt Processor first           │
 └─────────────┬────────────────────────────────┘
-              │
+              │ 2. Raw prompt sent to Prompt Processor
               ▼
 ┌──────────────────────────────────────────────┐
 │ Prompt Processor (Port 8000)                 │
 │ (python_backend/services/prompt_processor.py) │
-│  - Uses Gemini-Pro for semantic analysis     │
-│  - Advanced MCP/ACL enrichment via LLM       │
-│  - Builds context-aware structure            │
+│  Step 1: Input Analysis                      │
+│    - Parses raw user input                   │
+│    - Detects query type (symptom/patient)    │
+│    - Extracts patient ID if present          │
+│                                              │
+│  Step 2: LLM Service Integration             │
+│    - Calls Gemini-Pro via LLM Service        │
+│    - Semantic analysis of user intent        │
+│    - Extracts medical concepts               │
+│    - Generates enriched context              │
+│                                              │
+│  Step 3: MCP/ACL Enrichment                  │
+│    - Builds workflow structure               │
+│    - Selects appropriate agents              │
+│    - Defines action sequences                │
+│    - Injects semantic context                │
+│                                              │
+│  Result: Enhanced MCP/ACL JSON               │
 └─────────────┬────────────────────────────────┘
-              │
+              │ 3. Enriched MCP/ACL sent to Orchestration
               ▼
 ┌──────────────────────────────────────────────┐
 │ Orchestration Agent (Port 8001)              │
-│ (python_backend/orchestration_agent/main.py)  │
-│  - Receives enriched MCP/ACL                  │
+│ (python_backend/orchestration_agent/main.py) │
+│  - Receives enriched MCP/ACL from            │
+│    Prompt Processor                          │
 │  - Manages task execution flow               │
+│  - Orchestrates agent sequencing             │
 └─────────────┬────────────────────────────────┘
-              │
+              │ 4. Validates and processes MCP/ACL
               ▼
 ┌──────────────────────────────────────────────┐
-│ Input Handler (python_backend/orchestration/input_handler.py) │
-│  - Validates MCP/ACL structure                │
+│ Input Handler                                │
+│ (python_backend/orchestration/input_handler.py) │
+│  - Validates MCP/ACL structure               │
+│  - Verifies all required fields              │
 │  - Prepares for task planning                │
 └─────────────┬────────────────────────────────┘
               │
               ▼
 ┌──────────────────────────────────────────────┐
-│ Task Planner (python_backend/orchestration/task_planner.py) │
-│  - Sequences tasks based on MCP/ACL           │
-│  - Plans agent execution order                │
+│ Task Planner                                 │
+│ (python_backend/orchestration/task_planner.py) │
+│  - Decomposes workflow into tasks            │
+│  - Sequences tasks based on MCP/ACL          │
+│  - Plans agent execution order               │
 └─────────────┬────────────────────────────────┘
               │
               ▼
 ┌──────────────────────────────────────────────┐
-│ Agent Dispatcher (python_backend/orchestration/agent_dispatcher.py) │
-│  - Dispatches tasks to agents                 │
-│  - Manages inter-agent data flow              │
+│ Agent Dispatcher                             │
+│ (python_backend/orchestration/             │
+│  agent_dispatcher.py)                        │
+│  - Routes tasks to appropriate agents        │
+│  - Manages inter-agent data flow             │
+│  - Preserves context across agents           │
 └─────────────┬────────────────────────────────┘
               │
               ▼
 ┌──────────────────────────────────────────────┐
-│ FHIR Context Service                         │
-│ (python_backend/services/fhir_context.py)    │
-│  - Manages patient context                   │
-│  - Handles FHIR data mapping                 │
-│  - Maintains patient state                   │
-└─────────────┬────────────────────────────────┘
-              │
-              ▼
-┌──────────────────────────────────────────────┐
-│ Agents (Port 8002, 8003, etc.)              │
+│ Agents (Port 8002, 8003, 8005, etc.)        │
 │ (python_backend/agents/)                     │
-│  - Symptom Analyzer (symptom_analyzer/)      │
-│    * Includes patient context in analysis    │
-│  - Disease Prediction (disease_prediction/)  │
+│                                              │
+│  - Symptom Analyzer (8003)                   │
+│    * Extracts structured symptoms            │
+│    * Uses semantic context from Prompt       │
+│      Processor                               │
+│                                              │
+│  - Disease Prediction (8002)                 │
+│    * Calls LLM Service (Gemini-Pro)         │
 │    * Uses FHIR data for predictions         │
+│    * Reuses LLM logic from Prompt Processor  │
+│                                              │
+│  - Patient Journey (8005)                    │
+│    * Retrieves medical history from Neo4j    │
+│    * Requires authenticated patient ID       │
+│                                              │
 │  - ...future agents                         │
 └─────────────┬────────────────────────────────┘
               │
               ▼
 ┌──────────────────────────────────────────────┐
-│ Result Aggregator                            │
-│ (python_backend/orchestration/result_aggregator.py) │
-│  - Collects results from all agents          │
-│  - Manages data flow between agents          │
-│  - Prepares final response                   │
-└─────────────┬────────────────────────────────┘
-              │
-              ▼
-┌──────────────────────────────────────────────┐
-│ Orchestration Agent                          │
-│  - Returns final results to frontend         │
-└─────────────┬────────────────────────────────┘
-              │
-              ▼
-┌──────────────────────────────────────────────┐
-│ FHIR Data Store                             │
-│ (python_backend/ontology/fhir_store.py)     │
-│  - Stores patient records & medical data     │
-│  - Maintains FHIR-compliant data structures  │
-│  - Provides patient history & context        │
-│  - Links symptoms to patient records         │
-└─────────────┬────────────────────────────────┘
-              │
-              ▼
-┌──────────────────────────────────────────────┐
-│ (Dynamic Return)                            │
-│ Task Planner (python_backend/orchestration/  │
-│   task_planner.py)                          │
-│ Agent Dispatcher (python_backend/orchestration/agent_dispatcher.py) │
-│  - After each agent, returns here to plan/   │
-│    dispatch next step                       │
-└─────────────┬────────────────────────────────┘
-              │
-              ▼
-┌──────────────────────────────────────────────┐
 │ Service Layer (python_backend/services/)     │
-│  - Reusable logic: enrichment, logging, etc. │
+│                                              │
+│  LLM Service:                                │
+│    - Centralizes Gemini-Pro calls           │
+│    - Reusable for all agents                │
+│    - Consistent LLM-based logic              │
+│                                              │
+│  FHIR Context Service:                      │
+│    - Manages patient context                │
+│    - Handles FHIR data mapping              │
+│    - Maintains patient state                │
+│                                              │
+│  Other Services:                             │
+│    - Validation, logging, analytics          │
+│    - Result formatting                       │
 └─────────────┬────────────────────────────────┘
               │
               ▼
 ┌──────────────────────────────────────────────┐
-│ Results Aggregator (python_backend/orchestration/result_aggregator.py) │
-│  - Aggregates agent outputs into final result│
-│  - Enriches response with patient context    │
-│  - Ensures patient ID propagation            │
+│ Data Sources                                 │
+│                                              │
+│  FHIR Data Store                            │
+│  (python_backend/ontology/fhir_store.py)    │
+│    - Symptom and medical data               │
+│    - Disease predictions                    │
+│    - Treatment information                  │
+│                                              │
+│  Neo4j Database                             │
+│  (for Patient Journey Agent)                │
+│    - Patient records                        │
+│    - Medical history                        │
+│    - Diagnoses, appointments, tests         │
+│    - Medications, treatments                │
+└─────────────┬────────────────────────────────┘
+              │
+              ▼
+┌──────────────────────────────────────────────┐
+│ Result Aggregator                            │
+│ (python_backend/orchestration/             │
+│  result_aggregator.py)                       │
+│  - Collects results from all agents          │
+│  - Aggregates into single response           │
+│  - Ensures patient ID in response            │
+│  - Prepares final response format            │
 └─────────────┬────────────────────────────────┘
               │
               ▼
 ┌──────────────────────────────────────────────┐
 │ Feedback Loop & State Manager                │
-│ (python_backend/orchestration/feedback_loop.py,│
-│  python_backend/orchestration/state_manager.py) │
-│  - Collects user feedback, manages context   │
+│ (python_backend/orchestration/             │
+│  feedback_loop.py, state_manager.py)        │
+│  - Collects user feedback                    │
+│  - Manages conversation state                │
+│  - Maintains context across turns            │
 └─────────────┬────────────────────────────────┘
-              │
+              │ 5. Final aggregated results
               ▼
 ┌──────────────────────────────────────────────┐
-│ Frontend API (ExpoFE/services/backendApi.ts) │
-│  - Receives and returns results to UI        │
+│ Frontend API (Frontend/services/backendApi.ts) │
+│  - Receives final results                    │
+│  - Passes to WelcomeScreen for display       │
 └─────────────┬────────────────────────────────┘
-              │
+              │ 6. Display in chat
               ▼
 ┌─────────────────────────────┐
 │        User (Frontend)      │
-│  (WelcomeScreen, AgentChat.tsx) │
+│  (WelcomeScreen.tsx)        │
+│  - Sees results in chat     │
+│  - Can continue conversation│
 └─────────────────────────────┘
 ```
+
+**Key Flow Enhancements:**
+1. **Prompt Processor (Port 8000) is the First Backend Stop**
+   - Receives raw user input from Frontend API
+   - Uses Gemini-Pro LLM for semantic understanding via LLM Service
+   - Performs advanced MCP/ACL enrichment
+   - Returns enriched workflow structure to Orchestration Agent
+
+2. **LLM Service Integration**
+   - Centralized Gemini-Pro access point
+   - Reusable across Prompt Processor and all agents
+   - Promotes DRY principles and consistent logic
+
+3. **WelcomeScreen.tsx as Primary UI**
+   - Replaces AgentChat.tsx as the chat interface
+   - Handles both symptom queries and patient ID management
+   - Displays formatted results from backend
+
+4. **Semantic Context Preservation**
+   - Prompt Processor extracts semantic meaning
+   - Context flows through Orchestration to agents
+   - Agents make better decisions with LLM-enriched context
+
+5. **Multi-Agent Support**
+   - Symptom Analyzer uses semantic context
+   - Disease Prediction reuses LLM Service logic
+   - Patient Journey handles authenticated queries
+   - Modular, pluggable architecture
 
 **Note:**
 - After each agent (e.g., Symptom Analyzer), the flow returns to the Task Planner and Agent Dispatcher before calling the next agent (e.g., Disease Prediction), ensuring dynamic, stepwise orchestration.
@@ -1058,234 +1119,236 @@ Below are concrete suggestions to further improve your architecture and flow, al
 
 By implementing these recommendations, your system will be more robust, maintainable, and ready for future expansion and integration with advanced AI capabilities.
 
-## 11. Stepwise Explanation of the Improved Architecture Diagram (with LLM involvement and DRY principles)
-
-Below is a detailed, step-by-step explanation of each component and flow in the improved architecture diagram:
-
-1. **User (Frontend) (WelcomeScreen, AgentChat.tsx)**
-   - The user interacts with the app, entering symptoms or questions via the chat interface.
-   - The chat UI collects the user's input and displays it immediately.
-
-2. **Frontend API (ExpoFE/services/backendApi.ts)**
-   - The frontend sends the raw user input (and minimal metadata) to the backend via the API service.
-   - No workflow structuring or enrichment is done here; the request is passed as-is.
-
-3. **Orchestration Agent API Endpoint (python_backend/orchestration_agent/main.py)**
-   - Receives the API request from the frontend.
-   - Handles authentication, routing, and initial request validation.
-
-4. **Input Handler (python_backend/orchestration/input_handler.py)**
-   - Parses and validates the incoming request.
-   - Prepares the input for further processing by the backend.
-
-5. **Prompt Processor (python_backend/services/prompt_processor.py)**
-   - Uses Gemini-Pro LLM for deep semantic understanding of user input
-   - Extracts underlying meaning, intentions, and medical concepts
-   - Performs advanced MCP/ACL enrichment using LLM insights
-   - Builds context-aware workflow structure with semantic understanding
-   - Calls LLM Service for both semantic analysis and MCP/ACL enrichment
-   - Ensures accurate interpretation of medical symptoms and context
-
-6. **LLM Service (python_backend/services/llm_service.py)**
-   - Uses Gemini-Pro to extract structured symptoms and/or generate enriched MCP/ACL workflow structures.
-   - Promotes DRY principles by providing a reusable interface for all LLM-based enrichment and prediction tasks, so other backend modules and agents can leverage the same logic without duplicating code.
-
-7. **Input Handler (returns improved MCP/ACL)**
-   - Receives the enriched and validated workflow structure from the Prompt Processor and LLM Service.
-   - Passes the improved MCP/ACL to the orchestration logic.
-
-8. **Task Planner (python_backend/orchestration/task_planner.py)**
-   - Decomposes the workflow into a sequence of tasks.
-   - Determines the order in which agents should be called and what data each needs.
-   - Supports dynamic, stepwise orchestration.
-
-9. **Agent Dispatcher (python_backend/orchestration/agent_dispatcher.py)**
-   - Dispatches each task to the appropriate agent based on the plan.
-   - Handles agent selection, invocation, and error handling.
-
-10. **Agents (python_backend/agents/)**
-    - Specialized, pluggable modules that perform domain-specific tasks.
-    - Examples: Symptom Analyzer (extracts structured symptoms), Disease Prediction (predicts possible diseases using LLM and/or FHIR DB), and future agents.
-    - Agents may query the FHIR Demo DB for medical data as needed.
-    - The Disease Prediction Agent calls the LLM Service (Gemini-Pro) for disease prediction, reusing the same LLM logic as the Prompt Processor.
-
-11. **FHIR Demo DB (python_backend/ontology/ or similar)**
-    - A demo database storing symptom and medical data in FHIR format.
-    - Queried by agents (especially Disease Prediction) to enrich or validate predictions.
-
-12. **(Dynamic Return) Task Planner & Agent Dispatcher**
-    - After each agent completes, the flow returns to the Task Planner and Agent Dispatcher.
-    - This enables dynamic, stepwise orchestration, allowing the system to adapt the workflow based on intermediate results.
-
-13. **Service Layer (python_backend/services/)**
-    - Provides reusable logic such as enrichment, logging, validation, analytics, and FHIR mapping.
-    - Called by orchestration logic, agents, or other backend modules as needed.
-    - Promotes DRY principles by centralizing shared functionality, making it easy to maintain and extend the system without code duplication.
-
-14. **Results Aggregator (python_backend/orchestration/result_aggregator.py)**
-    - Aggregates outputs from all agents into a single, coherent result.
-    - Prepares the final response for the frontend.
-
-15. **Feedback Loop & State Manager (python_backend/orchestration/feedback_loop.py, state_manager.py)**
-    - Collects user feedback and manages conversation state and context.
-    - Supports learning, personalization, and continuous improvement of the system.
-
-16. **Frontend API (ExpoFE/services/backendApi.ts)**
-    - Receives the final aggregated result from the backend.
-    - Passes the result to the chat UI for display.
-
-17. **User (Frontend) (WelcomeScreen, AgentChat.tsx)**
-    - The user sees the results in the chat interface and can continue the conversation, starting the cycle again.
-
----
-
-**Promoting DRY Principles:**
-- The LLM Service and Service Layer are designed to be reusable across the backend, so all enrichment, prediction, and utility logic is centralized. This prevents code duplication, makes maintenance easier, and allows new agents or modules to leverage existing capabilities with minimal effort.
-- By calling the LLM Service from both the Prompt Processor and Disease Prediction Agent, you ensure consistent logic and results, and make it easy to update or extend LLM-based features in one place.
-
-## 12. Agentic vs Ensemble Architectures: Key Differences and Example Approaches
-
-### Agentic Architecture (Current Best Practice)
-- **Agents** are top-level, pluggable services (e.g., Symptom Analyzer, Disease Prediction Agent) orchestrated by the backend.
-- **Sub-agents** are internal modules used only within complex agents (e.g., Disease Prediction Agent uses TaskHandler, DomainLogic, etc.).
-- The orchestration layer sequences agents stepwise, passing results from one to the next.
-- Each agent is independent and focused on a single domain task.
-- This approach supports modularity, maintainability, and flexible workflows.
-
-**Example:**
-- Orchestration calls Symptom Analyzer → gets structured symptoms → calls Disease Prediction Agent → gets disease predictions → aggregates results.
-
-### Ensemble Architecture (Alternative Approach)
-- Multiple agents/models process the same input in parallel.
-- Outputs are aggregated (e.g., voting, averaging, stacking) for a final, robust result.
-- Used to combine strengths of different models/agents for improved accuracy.
-
-**Example Ensemble Workflow:**
-1. Orchestration receives user input ("I have a headache and fever").
-2. Dispatches input in parallel to:
-   - Symptom Analyzer (returns: ["headache", "fever"], confidence 0.8)
-   - Disease Prediction Agent (returns: ["Flu", "Migraine"], confidence 0.7)
-   - Another ML model (returns: ["Flu", "Common Cold"], confidence 0.6)
-3. Aggregator combines all predictions (e.g., "Flu" appears most, highest average confidence).
-4. Final result: "Possible Conditions: Flu (ensemble confidence: 0.7)"
-
-### How to Implement Ensemble in Your System
-- Update orchestration to support parallel dispatch and result collection.
-- Implement an aggregation module to combine outputs from multiple agents/models.
-- Agents/models should be stateless and able to process the same input independently.
-- Add ensemble logic to the Results Aggregator or a new Ensemble Aggregator.
-
----
-
-## 13. FAQ: Agents vs Sub-Agents
-
-**Agents:**
-- Top-level, orchestrated services called by the orchestration layer.
-- Examples: Symptom Analyzer, Disease Prediction Agent, Patient Journey Tracker.
-- Expose API endpoints and are independent.
-
-**Sub-Agents:**
-- Internal modules used by complex agents to structure their logic.
-- Examples: TaskHandler, DomainLogic, APIDataConnector, ErrorHandler, ResultsFormatter.
-- Not exposed as API endpoints; only used within their parent agent.
-
-**Current Best Practice:**
-- Standalone agents coordinated by orchestration, with sub-agents only inside complex agents, is the recommended architecture for agentic AI systems.
-
----
-
-## 14. Summary Table
-
-| Architecture      | Agents Work | Sub-Agents Used | Orchestration | Aggregation | Example Use Case                |
-|------------------|-------------|-----------------|---------------|-------------|---------------------------------|
-| Agentic (Current)| Sequential  | Inside agents   | Stepwise      | After agents| Medical diagnosis workflow      |
-| Ensemble         | Parallel    | Optional        | Parallel      | Ensemble    | Robust disease prediction       |
-
----
-
 ## 15. Patient Journey Agent: Detailed Workflow Diagram
 
 The **Patient Journey Agent** is a specialized agent that retrieves and formats a patient's complete medical history from the Neo4j database. It provides a comprehensive timeline of medical events including diagnoses, appointments, tests, treatments, and medications.
 
-### 15.1 Patient Journey Agent Architecture Diagram
+### 15.1 Patient Journey Agent Architecture Diagram (with Authentication Flow)
+
+The Patient Journey Agent workflow includes semantic detection of journey queries, authentication enforcement, and retrieval of patient medical history from Neo4j.
 
 ```
 ┌─────────────────────────────┐
 │        User (Frontend)      │
-│  (AgentChat.tsx)            │
+│  (WelcomeScreen.tsx)        │
 │  "Show my medical history"  │
+│  (User NOT logged in)       │
 └─────────────┬───────────────┘
               │
+              │ 1. Raw journey query
               ▼
 ┌──────────────────────────────────────────────┐
-│ Frontend API (backendApi.ts)                 │
-│  - Sends user query with patient_id          │
+│ Frontend API (Frontend/services/backendApi.ts) │
+│  - Sends user query                          │
+│  - user_id: 'anonymous' (not logged in)      │
 │  - Query: "Show my medical history"          │
-│  - Patient ID: pat1                          │
 └─────────────┬────────────────────────────────┘
               │
+              │ 2. Query sent to Prompt Processor
               ▼
 ┌──────────────────────────────────────────────┐
 │ Prompt Processor (Port 8000)                 │
 │ (python_backend/services/prompt_processor.py) │
-│  - Semantic Analysis:                        │
-│    * Detects "journey" keyword               │
-│    * Identifies patient_id from query        │
-│  - LLM Service:                              │
-│    * Confirms "patient_journey" intent       │
-│    * Extracts patient ID (pat1, pat2, etc)   │
-│  - MCP/ACL Generation:                       │
-│    * Creates workflow: patient_journey_tracking │
-│    * Action: get_journey                     │
-│    * Params: patient_id, query_type          │
+│                                              │
+│  Step 1: Semantic Analysis                   │
+│    - Analyzes query intent                   │
+│    - Keywords: "history", "journey", "show"  │
+│    - Detects: Patient Journey Query          │
+│                                              │
+│  Step 2: LLM Service Semantic Understanding  │
+│    - Calls Gemini-Pro via LLM Service        │
+│    - Result: "patient_journey" intent        │
+│    - Extracts patient context (if any)       │
+│                                              │
+│  Step 3: MCP/ACL Generation                  │
+│    - Workflow: patient_journey_tracking      │
+│    - Action: get_journey                     │
+│    - Params: {query, user_id: "anonymous"}   │
+│                                              │
+│  Result: Enhanced MCP/ACL JSON               │
 └─────────────┬────────────────────────────────┘
               │
+              │ 3. Enriched MCP/ACL to Orchestration
               ▼
 ┌──────────────────────────────────────────────┐
 │ Orchestration Agent (Port 8001)              │
 │ (python_backend/orchestration_agent/main.py) │
 │  - Receives enriched MCP/ACL                 │
-│  - Workflow: patient_journey_tracking        │
+│  - Identifies: patient_journey workflow      │
 └─────────────┬────────────────────────────────┘
               │
+              │ 4. Validates MCP/ACL
               ▼
 ┌──────────────────────────────────────────────┐
 │ Input Handler                                │
 │ (python_backend/orchestration/input_handler.py) │
 │  - Validates MCP/ACL structure               │
-│  - Verifies patient_id presence              │
+│  - Checks: Workflow is patient_journey       │
+│  - Checks: user_id exists in MCP/ACL         │
 │  - Prepares for task planning                │
 └─────────────┬────────────────────────────────┘
               │
+              │ 5. Authentication Check
+              ▼
+┌──────────────────────────────────────────────┐
+│ Task Planner / Auth Validator                │
+│ (python_backend/orchestration/task_planner.py) │
+│                                              │
+│  🔍 Decision Point: Is user authenticated?   │
+│                                              │
+│  Current state:                              │
+│    - user_id = "anonymous"                   │
+│    - Workflow = patient_journey              │
+│    - Result: ❌ NOT AUTHENTICATED            │
+│                                              │
+│  Action: Return auth error to frontend       │
+│    {                                         │
+│      "agent": "patient_journey",             │
+│      "error": "Authentication required",     │
+│      "requires_auth": true                   │
+│    }                                         │
+└─────────────┬────────────────────────────────┘
+              │
+              │ 6. Response sent to Frontend
+              ▼
+┌──────────────────────────────────────────────┐
+│ Frontend API (Frontend/services/backendApi.ts) │
+│  - Receives auth error response              │
+│  - Identifies: requires_auth = true          │
+│  - Triggers: Login redirect                  │
+└─────────────┬────────────────────────────────┘
+              │
+              │ 7. Redirect to Login
+              ▼
+┌─────────────────────────────┐
+│  Frontend Routes to Login   │
+│  (Frontend/app/auth/       │
+│   login.tsx)               │
+│                             │
+│  WelcomeScreen.tsx:         │
+│  router.push(               │
+│    '../auth/login'          │
+│  )                          │
+│                             │
+│  📱 User sees Login Screen   │
+└─────────────┬───────────────┘
+              │
+              │ 8. User Authenticates
+              ▼
+┌─────────────────────────────┐
+│  User Enters Patient ID     │
+│  Example: "pat1"            │
+│                             │
+│  Frontend stores:           │
+│  - userId = "pat1"          │
+│  - Navigates back to        │
+│    WelcomeScreen            │
+└─────────────┬───────────────┘
+              │
+              │ 9. Authenticated query retry
+              ▼
+┌─────────────────────────────┐
+│    User (Frontend)          │
+│  (WelcomeScreen.tsx)        │
+│  "Show my medical history"  │
+│  (User NOW logged in)       │
+│  userId: "pat1"             │
+└─────────────┬───────────────┘
+              │
+              │ 10. Query with patient ID
+              ▼
+┌──────────────────────────────────────────────┐
+│ Frontend API (Frontend/services/backendApi.ts) │
+│  - Sends user query                          │
+│  - user_id: 'pat1' (authenticated)           │
+│  - Query: "Show my medical history"          │
+└─────────────┬────────────────────────────────┘
+              │
+              │ 11. Query to Prompt Processor
+              ▼
+┌──────────────────────────────────────────────┐
+│ Prompt Processor (Port 8000)                 │
+│ (python_backend/services/prompt_processor.py) │
+│                                              │
+│  Step 1: Semantic Analysis                   │
+│    - Detects: patient_journey intent         │
+│                                              │
+│  Step 2: LLM Service                         │
+│    - Confirms journey query                  │
+│    - Extracts patient ID from context        │
+│                                              │
+│  Step 3: MCP/ACL Generation                  │
+│    - Workflow: patient_journey_tracking      │
+│    - Action: get_journey                     │
+│    - Params: {                               │
+│        query: "Show my medical history",     │
+│        user_id: "pat1",  ← AUTHENTICATED     │
+│        patient_id: "pat1"                    │
+│      }                                       │
+└─────────────┬────────────────────────────────┘
+              │
+              │ 12. Enriched MCP/ACL to Orchestration
+              ▼
+┌──────────────────────────────────────────────┐
+│ Orchestration Agent (Port 8001)              │
+│ (python_backend/orchestration_agent/main.py) │
+│  - Receives enriched MCP/ACL                 │
+│  - user_id: "pat1" ✅ AUTHENTICATED          │
+│  - Workflow: patient_journey_tracking        │
+└─────────────┬────────────────────────────────┘
+              │
+              │ 13. Validates authentication
+              ▼
+┌──────────────────────────────────────────────┐
+│ Input Handler                                │
+│ (python_backend/orchestration/input_handler.py) │
+│  - Validates MCP/ACL structure               │
+│  - ✅ Checks: user_id is NOT "anonymous"     │
+│  - ✅ Checks: patient_id present             │
+│  - Approves for processing                   │
+└─────────────┬────────────────────────────────┘
+              │
+              │ 14. Plan tasks
               ▼
 ┌──────────────────────────────────────────────┐
 │ Task Planner                                 │
 │ (python_backend/orchestration/task_planner.py) │
 │  - Identifies: patient_journey action        │
 │  - Creates task sequence:                    │
-│    Task 1: get_journey for patient_id        │
-│  - Plans single-step execution               │
+│    Task 1: get_journey for patient_id=pat1   │
+│  - ✅ User authenticated - proceed           │
 └─────────────┬────────────────────────────────┘
               │
+              │ 15. Dispatch to Patient Journey Agent
               ▼
 ┌──────────────────────────────────────────────┐
 │ Agent Dispatcher                             │
 │ (python_backend/orchestration/             │
 │  agent_dispatcher.py)                        │
 │  - Routes to: patient_journey agent (8005)  │
-│  - Enriches params with semantic context     │
-│  - Preserves patient_id: pat1                │
+│  - Params:                                   │
+│      patient_id: "pat1"                      │
+│      user_id: "pat1"                         │
+│      workflow: patient_journey_tracking      │
 └─────────────┬────────────────────────────────┘
               │
-              ▼ HTTP POST to http://localhost:8005/patient_journey
+              │ 16. HTTP POST to Patient Journey Agent
+              ▼
 ┌──────────────────────────────────────────────┐
 │ Patient Journey Agent (Port 8005)            │
 │ (python_backend/agents/patient_journey/)     │
 │  - main.py: FastAPI endpoint                 │
-│  - Receives: {"patient_id": "pat1", ...}     │
-│  - Validates patient_id is provided          │
+│  - Receives: {                               │
+│      "patient_id": "pat1",                   │
+│      "user_id": "pat1",                      │
+│      "workflow": "patient_journey_tracking"  │
+│    }                                         │
+│  - ✅ patient_id is provided                 │
+│  - ✅ user is authenticated (pat1)           │
+│  - Proceeds to query Neo4j                   │
 └─────────────┬────────────────────────────────┘
               │
+              │ 17. Call domain logic
               ▼
 ┌──────────────────────────────────────────────┐
 │ Patient Journey Domain Logic                 │
@@ -1296,32 +1359,35 @@ The **Patient Journey Agent** is a specialized agent that retrieves and formats 
 │    * URI: NEO4J_URI from .env                │
 │    * Auth: NEO4J_USER, NEO4J_PASSWORD       │
 │  - Executes 6 Separate Queries:              │
-│    1. Patient Info Query                     │
-│    2. Diagnosis Query                        │
-│    3. Appointment Query (with Doctor/Hospital) │
-│    4. Medication Query                       │
-│    5. Treatment Query                        │
-│    6. Test Query                             │
+│    1. Patient Info Query (fetch John Doe)    │
+│    2. Diagnosis Query (Hypertension, etc)    │
+│    3. Appointment Query (doctor/hospital)    │
+│    4. Medication Query (prescriptions)       │
+│    5. Treatment Query (ongoing treatments)   │
+│    6. Test Query (blood tests, etc)          │
+│  - Returns: All journey steps for pat1       │
 └─────────────┬────────────────────────────────┘
               │
+              │ 18. Query Neo4j
               ▼
 ┌──────────────────────────────────────────────┐
 │ Neo4j Database                               │
 │ (neo4j+s://d8be03e2.databases.neo4j.io)     │
-│  - Patient Node:                             │
+│                                              │
+│  Query 1 - Patient:                          │
 │    MATCH (p:Patient)                         │
-│    WHERE toLower(p.patientId) = pat1         │
-│  - Returns: patient_name: "John Doe"         │
+│    WHERE toLower(p.patientId) = "pat1"       │
+│    Returns: patient_name = "John Doe"        │
 │                                              │
-│  - Diagnosis Nodes:                          │
+│  Query 2 - Diagnoses:                        │
 │    MATCH (p)-[HAS_DIAGNOSIS]->(d:Diagnosis) │
-│    Returns: diagnoses with dates             │
+│    Returns: ["Hypertension", "Diabetes"]     │
 │                                              │
-│  - Appointment Nodes:                        │
+│  Query 3 - Appointments:                     │
 │    MATCH (p)-[HAS_APPOINTMENT]->(a:Appt)    │
 │    OPTIONAL MATCH (a)-[WITH_DOCTOR]->(doc)  │
 │    OPTIONAL MATCH (a)-[AT_HOSPITAL]->(h)    │
-│    Returns: appointments with doctor/hospital│
+│    Returns: 3 appointments with doctors      │
 │                                              │
 │  - Test Nodes:                               │
 │    MATCH (p)-[UNDERWENT_TEST]->(t:Test)     │
@@ -1331,11 +1397,20 @@ The **Patient Journey Agent** is a specialized agent that retrieves and formats 
 │    MATCH (p)-[RECEIVES_TREATMENT]->(tr)     │
 │    Returns: treatments with dates/status     │
 │                                              │
-│  - Medication Nodes:                         │
+│  Query 4 - Medications:                      │
 │    MATCH (p)-[TAKES_MEDICATION]->(m)        │
-│    Returns: medications with dosage/freq     │
+│    Returns: medication with dosages          │
+│                                              │
+│  Query 5 - Treatments:                       │
+│    MATCH (p)-[RECEIVES_TREATMENT]->(tr)     │
+│    Returns: treatments with status           │
+│                                              │
+│  Query 6 - Tests:                            │
+│    MATCH (p)-[UNDERWENT_TEST]->(t:Test)     │
+│    Returns: tests with results               │
 └─────────────┬────────────────────────────────┘
               │
+              │ 19. Process results
               ▼
 ┌──────────────────────────────────────────────┐
 │ Domain Logic: Result Processing              │
@@ -1346,8 +1421,7 @@ The **Patient Journey Agent** is a specialized agent that retrieves and formats 
 │  - Sorting: by date (chronological order)    │
 │  - Formatting: "Step type + date + details"  │
 │  - NULL filtering: excludes NULL/empty values│
-│  - Returns:                                  │
-│    {                                         │
+│  - Returns: {                                │
 │      "patient_name": "John Doe",             │
 │      "journey_steps": [                      │
 │        "🔍 Diagnosed with Hypertension...",  │
@@ -1359,6 +1433,7 @@ The **Patient Journey Agent** is a specialized agent that retrieves and formats 
 │    }                                         │
 └─────────────┬────────────────────────────────┘
               │
+              │ 20. Format response
               ▼
 ┌──────────────────────────────────────────────┐
 │ Patient Journey Agent Response               │
@@ -1367,7 +1442,7 @@ The **Patient Journey Agent** is a specialized agent that retrieves and formats 
 │  - Response:                                 │
 │    {                                         │
 │      "result": {                             │
-│        "journey_steps": [...],               │
+│        "journey_steps": [4 steps],           │
 │        "confidence": 1.0,                    │
 │        "patient_name": "John Doe"            │
 │      },                                      │
@@ -1375,23 +1450,109 @@ The **Patient Journey Agent** is a specialized agent that retrieves and formats 
 │    }                                         │
 └─────────────┬────────────────────────────────┘
               │
+              │ 21. Wrap result
               ▼
 ┌──────────────────────────────────────────────┐
-│ Agent Dispatcher: Error Handling             │
+│ Agent Dispatcher: Result Wrapping            │
 │ (python_backend/orchestration/             │
 │  agent_dispatcher.py)                        │
-│  - On success: wraps result                  │
-│  - On error: wraps error in result object    │
+│  - On success: wraps result in agent object  │
 │  - Returns:                                  │
 │    {                                         │
 │      "agent": "patient_journey",             │
-│      "result": {...},                        │
-│      "error": null  (or error message)       │
+│      "result": {journey_steps, confidence...}│
+│      "error": null                           │
 │    }                                         │
 └─────────────┬────────────────────────────────┘
               │
+              │ 22. Aggregate results
               ▼
 ┌──────────────────────────────────────────────┐
+│ Orchestration Agent: Result Aggregation      │
+│ (python_backend/orchestration/             │
+│  result_aggregator.py)                       │
+│  - Aggregates agent results                  │
+│  - Prepares final response for frontend      │
+│  - Returns: [{                               │
+│      "agent": "patient_journey",             │
+│      "result": {...},                        │
+│      "error": null                           │
+│    }]                                        │
+└─────────────┬────────────────────────────────┘
+              │
+              │ 23. Return to Frontend
+              ▼
+┌──────────────────────────────────────────────┐
+│ Frontend API (Frontend/services/backendApi.ts) │
+│  - Receives aggregated results               │
+│  - Returns to WelcomeScreen.tsx              │
+│  - User is authenticated (pat1) ✅           │
+└─────────────┬────────────────────────────────┘
+              │
+              │ 24. Format for display
+              ▼
+┌──────────────────────────────────────────────┐
+│ WelcomeScreen Component (Frontend/app/common/) │
+│  - formatResults() function:                 │
+│    * Detects agent === 'patient_journey'     │
+│    * Extracts journey_steps array            │
+│    * Adds emoji prefixes                     │
+│      🔍 Diagnosed with...                    │
+│      📅 Had appointment...                   │
+│      🧪 Had test...                          │
+│      💊 Started treatment...                 │
+│      💉 Prescribed medication...             │
+│    * Displays patient_name: "John Doe"       │
+│    * Shows confidence score: 100%            │
+│  - Displays formatted message in chat        │
+└─────────────┬────────────────────────────────┘
+              │
+              │ 25. Display result
+              ▼
+┌─────────────────────────────────────────────┐
+│        User (Frontend)                       │
+│  Sees formatted patient journey:             │
+│  (Authenticated as pat1 ✅)                  │
+│                                             │
+│  📋 Patient Journey: John Doe                │
+│                                             │
+│  🔍 Diagnosed with Hypertension             │
+│     on 2024-01-15                           │
+│                                             │
+│  📅 Had Consultation appointment             │
+│     on 2024-02-10 with Dr. Smith             │
+│     at City Hospital                         │
+│                                             │
+│  🧪 Had Blood Pressure Test                  │
+│     on 2024-02-15 - Normal                   │
+│                                             │
+│  💊 Started Antihypertensive treatment      │
+│     on 2024-01-20 - Ongoing                 │
+│                                             │
+│  Confidence: 100%                            │
+└─────────────────────────────────────────────┘
+```
+
+**Key Authentication Features:**
+
+| Step | Component | Action | Authentication Status |
+|------|-----------|--------|----------------------|
+| 1-9 | Unauthenticated Query | Detects journey query, redirects to login | ❌ NOT AUTHENTICATED |
+| 10-11 | User Logs In | User enters patient ID (pat1) | ⏳ LOGGING IN |
+| 12-18 | Authenticated Query | Processes with user_id=pat1 | ✅ AUTHENTICATED |
+| 19-25 | Neo4j Query & Display | Retrieves and displays journey | ✅ AUTHENTICATED |
+
+**Authentication Flow Summary:**
+
+1. **Detection Phase**: Prompt Processor uses Gemini-Pro to semantically identify patient journey queries
+2. **Auth Check Phase**: Task Planner verifies user authentication status
+3. **Redirect Phase**: If unauthenticated → sends error → Frontend redirects to login
+4. **Login Phase**: User provides patient ID (becomes userId)
+5. **Resume Phase**: User returns to WelcomeScreen, query retried with authentication
+6. **Processing Phase**: With user_id set, orchestration proceeds to Neo4j
+7. **Display Phase**: Results formatted and shown to authenticated user
+
+This ensures patient medical history is only accessible to authenticated, registered users.
 │ Orchestration Agent: Result Aggregation      │
 │ (python_backend/orchestration/             │
 │  result_aggregator.py)                       │
